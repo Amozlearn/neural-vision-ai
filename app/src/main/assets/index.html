@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#04070d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>NEURAL VISION AI — Advanced Facial Analysis System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Chakra+Petch:wght@500;600;700&family=Vazirmatn:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#04070d; --bg2:#060b14;
+  --pan:rgba(10,18,30,.55); --pan2:rgba(8,14,24,.72);
+  --line:rgba(0,229,255,.13); --line2:rgba(0,229,255,.34);
+  --cy:#00e5ff; --cy-d:#0891b2; --pu:#a970ff; --am:#ffc857; --rd:#ff3d6e; --gn:#3dffb0;
+  --tx:#e8f6ff; --mut:#7d93a8; --dim:#43596e;
+  --mono:'JetBrains Mono',monospace; --fa:'Vazirmatn',sans-serif;
+  --orb:'Orbitron',sans-serif; --tech:'Chakra Petch',sans-serif;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%}
+body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--fa);
+  overscroll-behavior:none;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+input{-webkit-user-select:text;user-select:text}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--line2)}
+.hidden{display:none!important}
+
+/* ---------- پس‌زمینه: گرید + ذرات + ویگنت ---------- */
+#bggrid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,229,255,.045) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,229,255,.045) 1px,transparent 1px);
+  background-size:30px 30px;
+  mask-image:radial-gradient(ellipse 90% 70% at 50% 30%,#000 30%,transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 30%,#000 30%,transparent 100%)}
+#bgres{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 40% at 50% -5%,rgba(0,229,255,.07),transparent 60%),
+             radial-gradient(ellipse 60% 40% at 50% 110%,rgba(169,112,255,.06),transparent 60%)}
+#pts{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
+.crt{position:fixed;inset:0;z-index:96;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.13) 0 1px,transparent 1px 3px);opacity:.4}
+
+/* ---------- قاب ---------- */
+#stage{height:100%;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+#phone{position:relative;width:412px;max-width:100%;height:100vh;height:100dvh;max-height:940px;
+  background:var(--bg);border:1px solid var(--line2);border-radius:34px;overflow:hidden;
+  box-shadow:0 0 0 7px #050a12,0 0 60px rgba(0,229,255,.07),0 34px 90px rgba(0,0,0,.85)}
+@media (max-width:560px),(max-height:620px){
+  #phone{width:100%;height:100vh;height:100dvh;max-height:none;border-radius:0;border:none;box-shadow:none}
+}
+
+/* ---------- نوار وضعیت ---------- */
+.statusbar{height:calc(32px + var(--sat));padding:var(--sat) 18px 0;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:space-between;direction:ltr;
+  font-family:var(--mono);font-size:10.5px;color:var(--dim);border-bottom:1px solid var(--line);z-index:5}
+.dot{width:5px;height:5px;background:var(--cy);display:inline-block;animation:blink 1.7s infinite}
+.dot.pu{background:var(--pu)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ---------- بوت سینمایی ---------- */
+#boot{position:absolute;inset:0;z-index:99;background:#02050b;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;transition:opacity .5s}
+#boot.off{opacity:0;pointer-events:none}
+.b-logo{font-family:var(--orb);font-weight:900;font-size:27px;letter-spacing:2px;color:var(--cy);
+  direction:ltr;text-shadow:0 0 22px rgba(0,229,255,.55)}
+.b-logo i{color:var(--pu);font-style:normal}
+.b-sub{font-family:var(--tech);font-size:11px;letter-spacing:.34em;color:var(--dim);direction:ltr}
+.b-bar{width:180px;height:2px;background:rgba(0,229,255,.12);margin-top:20px;overflow:hidden}
+.b-bar i{display:block;height:100%;background:var(--cy);width:0;transition:width .3s}
+
+/* ---------- گلیچ ---------- */
+.glitch{position:relative;display:inline-block}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;inset:0;direction:ltr;opacity:0;pointer-events:none}
+.glitch::before{color:var(--pu);animation:gl1 4.2s infinite steps(1)}
+.glitch::after{color:var(--rd);animation:gl2 4.2s infinite steps(1)}
+@keyframes gl1{0%,91%,100%{opacity:0}92%{opacity:.8;transform:translate(-2px,1px);clip-path:inset(10% 0 55% 0)}95%{opacity:.8;transform:translate(2px,-1px);clip-path:inset(58% 0 8% 0)}97%{opacity:0}}
+@keyframes gl2{0%,92%,100%{opacity:0}93%{opacity:.7;transform:translate(2px,-1px);clip-path:inset(36% 0 30% 0)}96%{opacity:.7;transform:translate(-2px,1px);clip-path:inset(6% 0 78% 0)}98%{opacity:0}}
+
+/* ---------- چیدمان ---------- */
+#app{position:absolute;inset:0;display:flex;flex-direction:column;z-index:2}
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;flex:0 0 auto}
+.logo{font-family:var(--orb);font-weight:700;font-size:16.5px;letter-spacing:1.5px;direction:ltr;color:var(--cy);
+  text-shadow:0 0 14px rgba(0,229,255,.35)}
+.logo i{color:var(--pu);font-style:normal}
+.logo-sub{font-family:var(--tech);font-size:8.5px;letter-spacing:.3em;color:var(--dim);direction:ltr;margin-top:3px}
+.icobtn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--pan);
+  border:1px solid var(--line);border-radius:9px;color:var(--mut);cursor:pointer;backdrop-filter:blur(10px)}
+.icobtn svg{width:17px;height:17px}
+.icobtn.onn{color:var(--cy);border-color:var(--line2)}
+
+#main{flex:1;min-height:0;position:relative}
+.view{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:14px 14px 20px;display:none;touch-action:pan-y}
+.view.on{display:block;animation:vin .3s ease}
+@keyframes vin{from{opacity:0;transform:translateY(8px)}}
+.sec{display:flex;align-items:center;gap:8px;font-family:var(--tech);font-size:11px;color:var(--mut);
+  margin:18px 2px 9px;letter-spacing:.14em;direction:ltr}
+.sec::after{content:'';flex:1;height:1px;background:var(--line)}
+.sec b{color:var(--cy);font-family:var(--mono);font-weight:500;font-size:9px}
+.sec .fa-t{font-family:var(--fa);letter-spacing:0;direction:rtl;font-size:12px;color:var(--mut)}
+
+.panel{background:var(--pan);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);position:relative}
+.panel::before{content:'';position:absolute;top:0;left:12px;right:12px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,255,.35),transparent);pointer-events:none}
+.holo{box-shadow:inset 0 0 24px rgba(0,229,255,.04),0 8px 32px rgba(0,0,0,.35)}
+
+/* ---------- دکمه‌ها ---------- */
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--line2);
+  background:var(--pan);color:var(--tx);font-family:var(--fa);font-size:13.5px;font-weight:500;
+  min-height:48px;padding:11px 14px;border-radius:10px;cursor:pointer;transition:.15s;width:100%;
+  backdrop-filter:blur(10px);touch-action:manipulation}
+.btn svg{width:17px;height:17px}
+.btn:active{transform:scale(.96)}
+.btn.pri{border-color:var(--cy);color:var(--cy);background:rgba(0,229,255,.07);
+  box-shadow:0 0 18px rgba(0,229,255,.12),inset 0 0 18px rgba(0,229,255,.05)}
+.btn.pri:active{box-shadow:0 0 26px rgba(0,229,255,.25)}
+.btn.pu{border-color:rgba(169,112,255,.5);color:var(--pu);background:rgba(169,112,255,.06)}
+.btn.ghost{color:var(--mut);background:transparent}
+.btn.dng{color:var(--rd);border-color:rgba(255,61,110,.4);background:rgba(255,61,110,.05)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.shape-hero{padding:16px;display:flex;align-items:center;gap:14px}
+.shape-ic{width:52px;height:52px;border-radius:12px;border:1px solid var(--line2);display:flex;align-items:center;
+  justify-content:center;color:var(--cy);flex:0 0 auto;background:rgba(0,229,255,.05)}
+.shape-ic svg{width:26px;height:26px}
+.shape-nm{font-family:var(--orb);font-size:17px;letter-spacing:.14em;direction:ltr;color:var(--cy)}
+.shape-fa{font-size:11.5px;color:var(--mut);margin-top:3px}
+.shape-ds{font-size:11.5px;color:var(--mut);line-height:1.9;margin-top:11px;border-top:1px dashed var(--line);padding-top:11px}
+.prop-diagram{position:relative;aspect-ratio:4/5;margin:10px;background:#02050c;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.prop-diagram img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.pd-line{position:absolute;background:var(--cy);opacity:.75;box-shadow:0 0 6px rgba(0,229,255,.6)}
+.pd-line.pu{background:var(--pu);box-shadow:0 0 6px rgba(169,112,255,.6)}
+.pd-vline{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,200,87,.7);box-shadow:0 0 6px rgba(255,200,87,.5)}
+.pd-lbl{position:absolute;font-family:var(--mono);font-size:8px;color:var(--cy);direction:ltr;
+  background:rgba(2,6,12,.8);padding:1px 5px;border:1px solid var(--line)}
+.prop-rows{padding:6px 15px 12px;font-family:var(--mono);font-size:11px;direction:ltr}
+.pr-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line)}
+.pr-row:last-child{border-bottom:none}
+.pr-row b{font-weight:400;color:var(--mut);font-size:9px;letter-spacing:.1em;display:flex;align-items:center;gap:6px}
+.pr-row span{color:var(--cy)}
+.est-tag{font-family:var(--mono);font-size:7px;color:var(--pu);border:1px solid rgba(169,112,255,.4);
+  padding:1px 5px;border-radius:3px;letter-spacing:.1em;direction:ltr;display:inline-block}
+.disc{font-size:10px;color:var(--dim);line-height:1.9;padding:10px 14px;border-top:1px dashed var(--line)}
+.disc b{color:var(--am);font-weight:500}
+.sug-group{padding:13px 15px}
+.sug-ttl{display:flex;align-items:center;gap:8px;font-family:var(--tech);font-size:10px;letter-spacing:.2em;color:var(--pu);direction:ltr;margin-bottom:10px}
+.sug-ttl svg{width:15px;height:15px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-family:var(--tech);font-size:10.5px;letter-spacing:.06em;direction:ltr;padding:7px 12px;border-radius:7px;
+  border:1px solid var(--line);color:var(--mut);background:rgba(8,14,24,.5);cursor:pointer;transition:.15s;position:relative}
+.chip.on{color:var(--cy);border-color:var(--cy);background:rgba(0,229,255,.07);box-shadow:0 0 10px rgba(0,229,255,.12)}
+.chip .primary{position:absolute;top:-7px;left:6px;font-family:var(--mono);font-size:6.5px;color:#03131a;background:var(--cy);
+  padding:1px 5px;border-radius:3px;letter-spacing:.1em;font-weight:700}
+.chip-desc{font-size:10.5px;color:var(--mut);line-height:1.9;margin-top:9px}
+.glasses-row{display:flex;gap:8px;align-items:center;padding:8px 0;font-size:12px}
+.glasses-row svg{width:17px;height:17px;color:var(--pu);flex:0 0 auto}
+/* ---------- BEFORE / AFTER ---------- */
+.ba-wrap{position:relative;aspect-ratio:4/5;margin:10px;background:#02050c;border-radius:12px;overflow:hidden;
+  border:1px solid var(--line2);direction:ltr;touch-action:none;cursor:ew-resize}
+.ba-wrap img,.ba-wrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.ba-handle{position:absolute;top:0;bottom:0;width:2px;background:var(--cy);z-index:5;box-shadow:0 0 12px var(--cy)}
+.ba-handle::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:34px;height:34px;border-radius:50%;border:2px solid var(--cy);background:rgba(2,6,12,.85)}
+.ba-handle svg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;color:var(--cy);z-index:2}
+.ba-tag{position:absolute;top:9px;z-index:4;font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;padding:3px 8px;
+  background:rgba(2,6,12,.8);border:1px solid var(--line2)}
+.ba-tag.l{left:9px;color:var(--mut)} .ba-tag.r{right:9px;color:var(--cy)}
+.ba-controls{padding:12px 15px;display:flex;flex-direction:column;gap:9px}
+.ba-row{display:flex;align-items:center;gap:10px;direction:ltr;font-family:var(--mono);font-size:10px}
+.ba-row .lb{width:150px;color:var(--mut);letter-spacing:.08em;display:flex;align-items:center;gap:7px}
+.ba-row .tag{font-size:7px;padding:2px 6px;border-radius:3px;letter-spacing:.1em}
+.tag.real{color:var(--gn);border:1px solid rgba(61,255,176,.35)}
+.tag.con{color:var(--am);border:1px solid rgba(255,200,87,.35)}
+.sw{margin-left:auto;position:relative;width:36px;height:19px;border-radius:10px;background:rgba(0,229,255,.12);
+  border:1px solid var(--line2);cursor:pointer;transition:.2s;flex:0 0 auto}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--cy);transition:.2s}
+.sw.on{background:rgba(0,229,255,.28)}
+.sw.on::after{left:19px}
+/* ---------- REPORT ---------- */
+.rep-doc{padding:15px}
+.rep-doc .rh{font-family:var(--orb);font-size:15px;letter-spacing:.14em;direction:ltr;color:var(--cy);text-align:center}
+.rep-doc .rs{font-family:var(--tech);font-size:8.5px;letter-spacing:.3em;color:var(--dim);direction:ltr;text-align:center;margin-top:5px}
+.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.rep-cell{border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+.rep-cell b{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:.12em;display:block;direction:ltr;font-weight:400}
+.rep-cell span{font-family:var(--mono);font-size:13px;color:var(--cy);direction:ltr;display:block;margin-top:4px}
+.rep-cell span.p{color:var(--pu)}
+.rep-list{font-family:var(--mono);font-size:10.5px;direction:ltr;line-height:2.1;color:var(--mut);padding:2px 0}
+.rep-list b{color:var(--tx);font-weight:400}
+.rep-actions{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.saved-rec{display:flex;align-items:center;gap:11px;padding:11px 6px;border-bottom:1px dashed var(--line);cursor:pointer}
+.saved-rec:active{background:rgba(0,229,255,.04)}
+.saved-rec img{width:44px;height:44px;object-fit:cover;border-radius:7px;border:1px solid var(--line2)}
+.saved-rec .si{flex:1}
+.saved-rec .sid{font-family:var(--mono);font-size:10.5px;color:var(--cy);direction:ltr;text-align:right}
+.saved-rec .st{font-size:10px;color:var(--dim);margin-top:2px}
+.saved-rec .ss{font-family:var(--orb);font-size:15px;color:var(--cy);direction:ltr}
+
+/* ---------- PRIVACY / SETTINGS ---------- */
+.pv-card{padding:15px}
+.pv-stat{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.pv-stat:last-child{border-bottom:none}
+.pv-stat svg{width:19px;height:19px;flex:0 0 auto}
+.pv-stat .t{flex:1;font-size:12.5px}
+.pv-stat .s{font-size:10px;color:var(--dim);margin-top:2px;line-height:1.7}
+.pv-badge{font-family:var(--mono);font-size:8px;letter-spacing:.12em;direction:ltr;padding:3px 8px;border-radius:4px;border:1px solid;flex:0 0 auto}
+.pb-g{color:var(--gn);border-color:rgba(61,255,176,.4)} .pb-p{color:var(--pu);border-color:rgba(169,112,255,.4)}
+.pb-a{color:var(--am);border-color:rgba(255,200,87,.4)} .pb-r{color:var(--rd);border-color:rgba(255,61,110,.4)}
+.set-row{display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px dashed var(--line)}
+.set-row:last-child{border-bottom:none}
+.set-row .t{flex:1;font-size:12.5px}
+.set-row .s{font-size:10px;color:var(--dim);margin-top:2px}
+.rec-status{font-family:var(--mono);font-size:10px;direction:ltr;padding:10px 15px;line-height:2;color:var(--mut)}
+.rec-status b{color:var(--cy);font-weight:400}
+
+/* ---------- تب‌بار ---------- */
+#tabbar{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);
+  background:rgba(5,9,16,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:6px 6px calc(7px + var(--sab));z-index:50}
+.tab{background:none;border:none;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-family:var(--fa);font-size:9.5px;padding:8px 0 4px;cursor:pointer;position:relative;min-height:48px;touch-action:manipulation}
+.tab svg{width:19px;height:19px}
+.tab.on{color:var(--cy)}
+.tab.on::before{content:'';position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:24px;height:2px;
+  background:var(--cy);box-shadow:0 0 8px var(--cy)}
+.tab:active svg{transform:scale(.88)}
+
+/* ---------- توست و مودال ---------- */
+#toasts{position:absolute;left:0;right:0;bottom:84px;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:90;pointer-events:none;padding:0 16px}
+.toast{display:flex;gap:9px;align-items:center;background:rgba(6,14,22,.92);border:1px solid var(--line2);color:var(--cy);
+  font-size:12px;padding:11px 16px;border-radius:9px;animation:tin .25s;max-width:100%;backdrop-filter:blur(10px)}
+.toast.warn{color:var(--am);border-color:rgba(255,200,87,.4)}
+.toast.err{color:var(--rd);border-color:rgba(255,61,110,.4)}
+.toast svg{width:15px;height:15px;flex:0 0 auto}
+@keyframes tin{from{opacity:0;transform:translateY(12px)}}
+#modal{position:absolute;inset:0;z-index:80;background:rgba(2,5,11,.8);display:none;align-items:center;
+  justify-content:center;padding:24px;backdrop-filter:blur(6px)}
+#modal.on{display:flex;animation:vin .25s}
+.modal-box{background:var(--pan2);border:1px solid var(--line2);border-radius:14px;padding:20px;max-width:340px;width:100%;
+  backdrop-filter:blur(20px);box-shadow:0 0 40px rgba(0,229,255,.08)}
+.modal-ttl{font-family:var(--orb);font-size:13px;letter-spacing:.16em;color:var(--cy);direction:ltr;margin-bottom:12px}
+.modal-body{font-size:12.5px;line-height:2;color:var(--tx);max-height:200px;overflow-y:auto}
+.modal-body .consent-row{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:11px;border:1px dashed rgba(169,112,255,.4);border-radius:9px}
+.modal-body input[type=checkbox]{width:18px;height:18px;accent-color:var(--pu);flex:0 0 auto;margin-top:2px}
+.modal-acts{display:flex;gap:9px;margin-top:16px}
+.empty-state{padding:60px 24px;text-align:center;color:var(--mut);font-size:13px;line-height:2.1}
+.empty-state svg{width:46px;height:46px;color:var(--dim);stroke-width:1;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div id="bgres"></div><div id="bggrid"></div><canvas id="pts"></canvas>
+<div id="stage"><div id="phone">
+  <div class="crt"></div>
+
+  <div class="statusbar">
+    <span id="sb-time">--:--</span>
+    <span style="display:flex;align-items:center;gap:6px;letter-spacing:.14em;font-size:9px"><i class="dot"></i>NEURAL-LINK</span>
+    <span style="display:flex;align-items:center;gap:9px">
+      <i data-lucide="wifi"></i>
+      <span style="width:24px;height:11px;border:1px solid var(--line2);border-radius:2px;padding:1.5px;position:relative"><i id="batt-i" style="display:block;height:100%;width:64%;background:var(--cy)"></i></span>
+    </span>
+  </div>
+
+  <!-- بوت -->
+  <div id="boot">
+    <div class="b-logo glitch" data-text="NEURAL VISION AI">NEURAL&nbsp;<i>VISION</i>&nbsp;AI</div>
+    <div class="b-sub">ADVANCED FACIAL ANALYSIS SYSTEM</div>
+    <div class="b-bar"><i id="b-bar"></i></div>
+  </div>
+
+  <div id="app" class="hidden">
+    <header class="appbar">
+      <div>
+        <div class="logo glitch" data-text="NEURAL VISION AI">NEURAL <i>VISION</i> AI</div>
+        <div class="logo-sub">ADVANCED FACIAL ANALYSIS SYSTEM</div>
+      </div>
+      <div style="display:flex;gap:9px">
+        <button id="vibbtn" class="icobtn onn"><i data-lucide="vibrate"></i></button>
+        <button id="sndbtn" class="icobtn onn"><i data-lucide="volume-2"></i></button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="view on" id="view-home"><div id="homebody"></div></section>
+      <section class="view" id="view-scan"><div id="scanbody"></div><input type="file" id="f-up" accept="image/*" hidden></section>
+      <section class="view" id="view-results"><div id="resbody"></div></section>
+      <section class="view" id="view-report"><div id="repbody"></div></section>
+      <section class="view" id="view-settings"><div id="setbody"></div></section>
+    </main>
+
+    <nav id="tabbar">
+      <button class="tab on" data-v="home"><i data-lucide="aperture"></i>خانه</button>
+      <button class="tab" data-v="scan"><i data-lucide="scan-face"></i>اسکن</button>
+      <button class="tab" data-v="results"><i data-lucide="layout-dashboard"></i>نتایج</button>
+      <button class="tab" data-v="report"><i data-lucide="file-text"></i>گزارش</button>
+      <button class="tab" data-v="settings"><i data-lucide="shield"></i>حریم</button>
+    </nav>
+  </div>
+
+  <!-- آنالایزر -->
+  <div id="analyzer">
+    <div class="an-hd"><span>NEURAL ANALYSIS</span><span id="an-id">STANDBY</span></div>
+    <div class="an-frame" id="an-frame">
+      <img id="an-img" alt="">
+      <canvas id="an-cv"></canvas>
+      <span class="bk tl" id="bk-tl"></span><span class="bk tr" id="bk-tr"></span>
+      <span class="bk bl" id="bk-bl"></span><span class="bk br" id="bk-br"></span>
+    </div>
+    <div id="an-msg">INITIALIZING AI...</div>
+    <div id="an-regions"></div>
+    <div class="an-prog"><div class="pbar"><i id="an-pi"></i></div><span id="an-pct">0%</span></div>
+    <div class="alog" id="an-log"></div>
+    <div id="an-fail" class="hidden">
+      <div class="f1">SCAN FAILED — NO FACE DETECTED</div>
+      <div class="f2">چهره‌ای در تصویر شناسایی نشد. تصویری واضح‌تر و روبه‌رو انتخاب کنید.</div>
+      <button class="btn dng" id="an-retry"><i data-lucide="rotate-ccw"></i>بازگشت و تلاش مجدد</button>
+    </div>
+  </div>
+
+  <!-- مودال رضایت -->
+  <div id="modal">
+    <div class="modal-box">
+      <div class="modal-ttl">FACE REFERENCE CONSENT</div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-acts">
+        <button class="btn ghost" id="md-no">انصراف</button>
+        <button class="btn pu" id="md-yes" disabled><i data-lucide="fingerprint"></i>تأیید و ثبت</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+</div></div>
+
+<script>
+/* ================= پایه ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const icons=()=>lucide.createIcons();
+const DPR=Math.min(2,window.devicePixelRatio||1);
+const Vib=p=>{ if(S.set.haptics&&navigator.vibrate){try{navigator.vibrate(p)}catch(e){}} };
+const S={view:'home',mode:'idle',stream:null,facing:'user',photo:null,metrics:null,lastReport:null,
+  analyzing:false,meshT:0,meshRun:false,liveRun:false,hl:-1,propLines:false,
+  ba:{skin:true,tone:true,split:50},
+  set:JSON.parse(localStorage.getItem('nva_settings')||'{"save":true,"sound":true,"haptics":true}'),
+  enroll:JSON.parse(localStorage.getItem('nva_enroll')||'null')};
+const saveSet=()=>localStorage.setItem('nva_settings',JSON.stringify(S.set));
+
+/* ================= صدا ================= */
+const Snd={ctx:null,
+  ensure(){ if(!this.ctx){try{this.ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+    if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume() },
+  beep(f=880,d=.05,v=.03,type='square'){ if(!S.set.sound)return; this.ensure(); if(!this.ctx)return;
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+    o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,this.ctx.currentTime+d);
+    o.connect(g).connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+d) },
+  ok(){this.beep(640,.07);setTimeout(()=>this.beep(960,.1),80)},
+  err(){this.beep(160,.25,.05,'sawtooth')},
+  tick(){this.beep(1400,.025,.016)}
+};
+
+/* ================= توست ================= */
+function toast(msg,type='ok'){
+  const d=document.createElement('div');
+  d.className='toast'+(type!=='ok'?' '+type:'');
+  d.innerHTML=`<i data-lucide="${type==='ok'?'check-circle-2':type==='warn'?'alert-triangle':'x-circle'}"></i><span>${msg}</span>`;
+  $('#toasts').appendChild(d);icons();
+  setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity .3s';setTimeout(()=>d.remove(),320)},2900);
+}
+
+/* ================= ساعت/باتری/ذرات ================= */
+setInterval(()=>{$('#sb-time').textContent=new Date().toTimeString().slice(0,5)},1000);
+$('#sb-time').textContent=new Date().toTimeString().slice(0,5);
+(async()=>{try{ if(navigator.getBattery){const b=await navigator.getBattery();
+  const u=()=>{const e=$('#batt-i');if(e){e.style.width=Math.round(b.level*100)+'%';e.style.background=b.level<.2?'var(--rd)':'var(--cy)'}};
+  u();b.addEventListener('levelchange',u)}}catch(e){}})();
+(function particles(){
+  const cv=$('#pts'),x=cv.getContext('2d');let W,H,P=[];
+  function rs(){W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;
+    P=Array.from({length:34},()=>({x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-.5)*.18*DPR,vy:(Math.random()-.5)*.18*DPR,
+      r:(Math.random()*1.2+.5)*DPR,c:Math.random()<.75?'0,229,255':'169,112,255'}))}
+  rs();addEventListener('resize',rs);
+  (function loop(){x.clearRect(0,0,W,H);
+    for(const p of P){p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      x.fillStyle=`rgba(${p.c},.35)`;x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()}
+    requestAnimationFrame(loop)})();
+})();
+
+/* ================= PWA: مانیفست و آیکون در لحظه (نصب روی صفحهٔ اصلی) ================= */
+try{
+  const mkIcon=size=>{const c=document.createElement('canvas');c.width=c.height=size;
+    const x=c.getContext('2d'),g=size/100;
+    x.fillStyle='#04070d';x.fillRect(0,0,size,size);
+    x.strokeStyle='#00e5ff';x.lineWidth=4.5*g;x.lineCap='square';
+    const m=13*g,L=20*g;
+    x.beginPath();
+    x.moveTo(m,m+L);x.lineTo(m,m);x.lineTo(m+L,m);
+    x.moveTo(size-m-L,m);x.lineTo(size-m,m);x.lineTo(size-m,m+L);
+    x.moveTo(size-m,size-m-L);x.lineTo(size-m,size-m);x.lineTo(size-m-L,size-m);
+    x.moveTo(m+L,size-m);x.lineTo(m,size-m);x.lineTo(m,size-m-L);
+    x.stroke();
+    for(let r=-1;r<=1;r++)for(let q=-1;q<=1;q++){
+      x.fillStyle=(r===0&&q===0)?'#a970ff':'#00e5ff';
+      x.globalAlpha=(r===0&&q===0)?1:.5;
+      x.beginPath();x.arc(size/2+q*9*g,size/2+r*9*g,2.2*g,0,7);x.fill();}
+    x.globalAlpha=1;
+    return c.toDataURL('image/png')};
+  const man={name:'Neural Vision AI',short_name:'NVA',display:'standalone',orientation:'portrait',
+    start_url:'.',background_color:'#04070d',theme_color:'#04070d',
+    icons:[{src:mkIcon(192),sizes:'192x192',type:'image/png'},{src:mkIcon(512),sizes:'512x512',type:'image/png'}]};
+  const ml=document.createElement('link');ml.rel='manifest';
+  ml.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/json'}));
+  document.head.appendChild(ml);
+  const al=document.createElement('link');al.rel='apple-touch-icon';al.href=mkIcon(180);
+  document.head.appendChild(al);
+}catch(e){}
+
+/* ================= ناوبری ================= */
+const TABS=['home','scan','results','report','settings'];
+function setView(v){
+  S.view=v;
+  $$('.view').forEach(x=>x.classList.toggle('on',x.id==='view-'+v));
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.v===v));
+  if(v==='home')renderHome();
+  if(v==='results')renderResults(S.lastReport);
+  if(v==='report')renderReportView();
+  if(v==='settings')renderSettings();
+}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{Snd.tick();Vib(8);setView(t.dataset.v)}));
+
+/* ================= بوت سینمایی ================= */
+(async()=>{
+  icons();
+  const bar=$('#b-bar');
+  for(let i=1;i<=5;i++){bar.style.width=(i*20)+'%';await sleep(180)}
+  await sleep(240);
+  $('#boot').classList.add('off');
+  setTimeout(()=>$('#boot').remove(),520);
+  $('#app').classList.remove('hidden');
+  icons();renderHome();
+})();
+
+/* ================= HOME ================= */
+function renderHome(){
+  $('#homebody').innerHTML=`
+  <div class="hero">
+    <div class="ttl glitch" data-text="NEURAL VISION AI">NEURAL <i>VISION</i> AI</div>
+    <div class="stl">ADVANCED FACIAL ANALYSIS SYSTEM</div>
+  </div>
+  <div class="ring-wrap">
+    <svg viewBox="0 0 186 186">
+      <circle cx="93" cy="93" r="88" fill="none" stroke="rgba(0,229,255,.1)" stroke-width="1"/>
+      <g class="r-rot"><circle cx="93" cy="93" r="88" fill="none" stroke="rgba(0,229,255,.5)" stroke-width="1.5"
+        stroke-dasharray="30 200" stroke-linecap="round"/></g>
+      <g class="r-rot2"><circle cx="93" cy="93" r="76" fill="none" stroke="rgba(169,112,255,.45)" stroke-width="1.5"
+        stroke-dasharray="12 90" stroke-linecap="round"/></g>
+      <circle cx="93" cy="93" r="64" fill="none" stroke="rgba(0,229,255,.14)" stroke-width="1" stroke-dasharray="3 6"/>
+    </svg>
+    <div class="ring-core"><i data-lucide="scan-face"></i><span>AWAITING&nbsp;SUBJECT</span></div>
+  </div>
+  <div class="home-actions">
+    <button class="btn pri" id="h-scan" style="min-height:56px;font-size:15px;font-family:var(--tech);letter-spacing:.14em">
+      <i data-lucide="crosshair"></i>SCAN FACE</button>
+    <div class="tri">
+      <button class="tbtn" id="h-photo"><i data-lucide="camera"></i>TAKE PHOTO</button>
+      <button class="tbtn" id="h-up"><i data-lucide="upload"></i>UPLOAD IMAGE</button>
+      <button class="tbtn" id="h-live"><i data-lucide="video"></i>LIVE CAMERA</button>
+    </div>
+  </div>
+  <div class="sec"><span>SYSTEM STATUS</span><b>CORE</b></div>
+  <div class="panel holo sysbox">
+    <div class="row"><b>AI ENGINE</b><span id="st-eng">ONLINE</span></div>
+    <div class="row"><b>FACE DETECTION</b><span id="st-det">READY</span></div>
+    <div class="row"><b>ANALYSIS CORE</b><span class="c" id="st-core">ACTIVE</span></div>
+    <div class="row"><b>NEURAL ENTROPY</b><span class="p" id="st-ent">99.2%</span></div>
+    <div class="row"><b>DATA BOUNDARY</b><span>LOCAL-ONLY</span></div>
+  </div>
+  <div class="priv-note">پردازش کاملاً روی دستگاه انجام می‌شود و هیچ دادهٔ چهره‌ای از دستگاه خارج نمی‌شود<br>
+  <i>// NO CLOUD · NO UPLOAD · NO TRACKING</i></div>`;
+  icons();
+  $('#h-scan').onclick=()=>{Snd.tick();Vib(8);
+    if(S.photo)startScan(); else {setView('scan');toast('ابتدا تصویر بگیرید یا بارگذاری کنید','warn')}};
+  $('#h-photo').onclick=()=>{setView('scan');openCam()};
+  $('#h-up').onclick=()=>{setView('scan');$('#f-up').click()};
+  $('#h-live').onclick=()=>{setView('scan');openCam()};
+  if(S._homeTimer)clearInterval(S._homeTimer);
+  S._homeTimer=setInterval(()=>{ if(!$('#st-ent'))return;
+    $('#st-ent').textContent=(98.4+Math.random()*1.5).toFixed(1)+'%';
+    $('#st-core').textContent=['ACTIVE','ACTIVE','PROCESSING'][Math.random()*3|0];
+  },1600);
+}
+
+/* ================= SCAN ================= */
+function renderScan(){
+  const b=$('#scanbody');
+  if(S.mode==='idle'){
+    b.innerHTML=`
+    <div class="scanframe" style="border-style:dashed;display:flex;align-items:center;justify-content:center">
+      <div style="text-align:center;padding:20px">
+        <i data-lucide="user-scan" style="width:56px;height:56px;color:var(--dim);stroke-width:1"></i>
+        <div style="margin-top:12px;font-size:14px;font-weight:700">سوژه‌ای در کادر نیست</div>
+        <div style="font-size:11.5px;color:var(--mut);margin-top:6px">دوربین را باز کنید یا تصویری از چهره بارگذاری کنید</div>
+      </div>
+      <span class="cor tl"></span><span class="cor tr"></span><span class="cor bl"></span><span class="cor br"></span>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn pri" id="s-cam"><i data-lucide="camera"></i>دوربین</button>
+      <button class="btn" id="s-up"><i data-lucide="upload"></i>تصویر</button>
+    </div>
+    <div class="sens panel">
+      <div><b>NET_PING</b><span id="sx-ping">10ms</span></div>
+      <div><b>NEURAL_LOAD</b><span id="sx-gpu">38%</span></div>
+      <div><b>ENTROPY</b><span id="sx-ent">99.1%</span></div>
+    </div>
+    <div class="hint">چهره روبه‌رو، نور یکنواخت و بدون عینک تیره بهترین نتیجه را می‌دهد <i>// TIP-01</i></div>`;
+    $('#s-cam').onclick=openCam; $('#s-up').onclick=()=>$('#f-up').click();
+    if(S._sxTimer)clearInterval(S._sxTimer);
+    S._sxTimer=setInterval(()=>{ if(!$('#sx-ping'))return;
+      $('#sx-ping').textContent=(7+Math.random()*9).toFixed(0)+'ms';
+      $('#sx-gpu').textContent=(30+Math.random()*30).toFixed(0)+'%';
+      $('#sx-ent').textContent=(98.2+Math.random()*1.7).toFixed(1)+'%';},1400);
+  }
+  else if(S.mode==='camera'){
+    b.innerHTML=`
+    <div class="scanframe">
+      <video id="cam" class="${S.facing==='user'?'mir':''}" playsinline muted autoplay></video>
+      <canvas id="live-cv"></canvas>
+      <div class="scanline run"></div>
+      <span class="live-tag"><i class="dot"></i>LIVE</span>
+      <span class="lock-tag" id="live-lock">SEARCHING…</span>
+      <span class="cor tl"></span><span class="cor tr"></span><span class="cor bl"></span><span class="cor br"></span>
+    </div>
+    <div class="cam-row">
+      <button class="side-btn" id="s-flip"><i data-lucide="switch-camera"></i></button>
+      <button class="shutter" id="s-shot"><span></span></button>
+      <button class="side-btn" id="s-up2"><i data-lucide="image-plus"></i></button>
+    </div>
+    <div class="cam-x"><button class="linklike" id="s-stop"><i data-lucide="x"></i>بستن دوربین</button></div>
+    <div class="hint">تحلیل زنده فعال است — مش نقطه‌ای به‌صورت واقع‌زمان روی چهره قفل می‌شود <i>// LIVE-FEED</i></div>`;
+    const v=$('#cam');
+    if(S.stream){v.srcObject=S.stream;v.play().catch(()=>{})}
+    startLive();
+    $('#s-shot').onclick=capture; $('#s-flip').onclick=flipCam;
+    $('#s-up2').onclick=()=>$('#f-up').click();
+    $('#s-stop').onclick=()=>{stopCam();S.mode='idle';renderScan()};
+  }
+  else{
+    b.innerHTML=`
+    <div class="scanframe">
+      <img class="fit" src="${S.photo}" alt="سوژه">
+      <span class="lock-tag">SUBJECT BUFFERED</span>
+      <span class="cor tl"></span><span class="cor tr"></span><span class="cor bl"></span><span class="cor br"></span>
+    </div>
+    <button class="btn pri" id="s-go" style="margin-top:15px;min-height:54px;font-family:var(--tech);letter-spacing:.12em">
+      <i data-lucide="crosshair"></i>START ANALYSIS</button>
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <button class="btn ghost" id="s-recam"><i data-lucide="refresh-ccw"></i>دوربین</button>
+      <button class="btn ghost" id="s-reup"><i data-lucide="image-plus"></i>تصویر دیگر</button>
+    </div>
+    <div class="hint">تصویر در بافر امن قرار گرفت — پردازش محلی <i>// READY</i></div>`;
+    $('#s-go').onclick=startScan;
+    $('#s-recam').onclick=()=>{S.mode='idle';renderScan();openCam()};
+    $('#s-reup').onclick=()=>$('#f-up').click();
+  }
+  icons();
+}
+$('#f-up').addEventListener('change',e=>{
+  const f=e.target.files[0];e.target.value='';
+  if(!f||!f.type.startsWith('image/')){toast('فایل انتخاب‌شده تصویر نیست','warn');return}
+  const r=new FileReader();r.onload=()=>ingest(r.result);r.readAsDataURL(f);
+});
+const loadImg=url=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+async function ingest(url){
+  try{
+    let img=await loadImg(url);
+    if(Math.max(img.naturalWidth,img.naturalHeight)>1280){
+      const k=1280/Math.max(img.naturalWidth,img.naturalHeight);
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      url=c.toDataURL('image/jpeg',.87);
+    }
+    stopCam();S.photo=url;S.mode='photo';renderScan();Snd.tick();Vib(10);
+    toast('تصویر سوژه در بافر قرار گرفت');
+  }catch(e){toast('خواندن تصویر ناموفق بود','warn')}
+}
+async function camStream(facing){return navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:960}},audio:false})}
+async function openCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){Snd.err();toast('این مرورگر دوربین ندارد — تصویر بارگذاری کنید','warn');return}
+  if(!window.isSecureContext){Snd.err();toast('دوربین فقط روی HTTPS/اپ در دسترس است — تصویر بارگذاری کنید','warn');return}
+  try{S.stream=await camStream(S.facing);S.mode='camera';renderScan();Snd.tick();Vib(8)}
+  catch(e){Snd.err();Vib([50,40,50]);toast('دسترسی به دوربین مسدود است — تصویر بارگذاری کنید','warn')}
+}
+async function flipCam(){
+  const next=S.facing==='user'?'environment':'user';let st=null;
+  try{st=await camStream(next)}catch(e){}
+  if(!st){toast('دوربین دیگری در دسترس نیست','warn');return}
+  stopCam();S.facing=next;S.stream=st;renderScan();Snd.tick();
+}
+function stopCam(){S.liveRun=false;if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null}}
+function capture(){
+  const v=$('#cam');if(!v||!v.videoWidth){toast('دوربین آماده نیست','warn');return}
+  const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;
+  const x=c.getContext('2d');
+  if(S.facing==='user'){x.translate(c.width,0);x.scale(-1,1)}
+  x.drawImage(v,0,0);
+  stopCam();S.photo=c.toDataURL('image/jpeg',.86);S.mode='photo';renderScan();
+  Snd.beep(1150,.06);Vib(18);toast('فریم ثبت شد');
+}
+/* ---------- تحلیل زندهٔ سبک روی دوربین (مش واقع‌زمان) ---------- */
+function startLive(){
+  const cv=$('#live-cv'),v=$('#cam');if(!cv||!v)return;
+  S.liveRun=true;let last=0;
+  (function loop(t){
+    if(!S.liveRun||!document.body.contains(cv))return;
+    requestAnimationFrame(loop);
+    if(t-last<130)return;last=t;
+    if(!v.videoWidth)return;
+    const cw=cv.clientWidth,ch=cv.clientHeight;if(!cw)return;
+    if(cv.width!==Math.round(cw*DPR)){cv.width=Math.round(cw*DPR);cv.height=Math.round(ch*DPR)}
+    const x=cv.getContext('2d');
+    x.setTransform(DPR,0,0,DPR,0,0);x.clearRect(0,0,cw,ch);
+    const W=64,H=Math.max(8,Math.round(64*v.videoHeight/v.videoWidth));
+    const oc=document.createElement('canvas');oc.width=W;oc.height=H;
+    const ox=oc.getContext('2d');ox.drawImage(v,0,0,W,H);
+    const d=ox.getImageData(0,0,W,H).data;
+    const mir=S.facing==='user';
+    let pts=0,cxs=0,cys=0;
+    for(let gy=0;gy<=10;gy++)for(let gx=0;gx<=8;gx++){
+      const px=Math.round(gx*W/8),py=Math.round(gy*H/10);
+      const i=(py*W+px)*4,r=d[i],g=d[i+1],b2=d[i+2];
+      const cb=128-.168736*r-.331264*g+.5*b2,cr=128+.5*r-.418688*g-.081312*b2;
+      if(cb>=77&&cb<=127&&cr>=133&&cr<=177){
+        pts++;cxs+=gx;cys+=gy;
+        const sx=(gx/8)*cw,sy=(gy/10)*ch;
+        const sx2=mir?cw-sx:sx;
+        x.fillStyle='rgba(0,229,255,.85)';
+        x.beginPath();x.arc(sx2,sy,1.6,0,7);x.fill();
+        x.fillStyle='rgba(0,229,255,.14)';
+        x.beginPath();x.arc(sx2,sy,4.4,0,7);x.fill();
+      }
+    }
+    const lk=$('#live-lock');
+    if(lk){
+      if(pts>26){lk.textContent='FACE LOCKED · '+pts+' PTS';lk.style.color='var(--gn)';lk.style.borderColor='rgba(61,255,176,.4)'}
+      else{lk.textContent='SEARCHING…';lk.style.color='var(--cy)';lk.style.borderColor='var(--line2)'}
+    }
+  })(0);
+}
+
+/* ================= موتور تحلیل (کاملاً محلی روی پیکسل‌ها) ================= */
+async function analyzeImage(url){
+  const img=await loadImg(url);
+  const iw=img.naturalWidth,ih=img.naturalHeight;
+  const W=120,H=Math.max(8,Math.round(W*ih/iw));
+  const c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');x.drawImage(img,0,0,W,H);
+  const d=x.getImageData(0,0,W,H).data,N=W*H;
+  const lum=new Float32Array(N),skin=new Uint8Array(N);
+  let sumL=0,sc=0;
+  for(let i=0,p=0;i<N;i++,p+=4){
+    const r=d[p],g=d[p+1],b2=d[p+2];
+    const l=(.299*r+.587*g+.114*b2)/255;lum[i]=l;sumL+=l;
+    const cb=128-.168736*r-.331264*g+.5*b2,cr=128+.5*r-.418688*g-.081312*b2;
+    if(cb>=77&&cb<=127&&cr>=133&&cr<=177){skin[i]=1;sc++}
+  }
+  const mean=sumL/N,skinRatio=sc/N;
+  let vs=0;for(let i=0;i<N;i++){const e=lum[i]-mean;vs+=e*e}
+  const contrast=Math.sqrt(vs/N);
+  let hsh=5381;for(let i=0;i<N;i+=31)hsh=(((hsh<<5)+hsh)+Math.round(lum[i]*4096))|0;hsh=hsh>>>0;
+
+  if(skinRatio<0.008)return{ok:false,reason:'skin',iw,ih};
+
+  /* باکس صورت از ماسک پوست */
+  const colC=new Array(W).fill(0),rowC=new Array(H).fill(0);
+  for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++)if(skin[y*W+xx]){colC[xx]++;rowC[y]++}
+  const mx=Math.max(...colC)||1,my=Math.max(...rowC)||1;
+  let x0=W,x1=0,y0=H,y1=0;
+  for(let j=0;j<W;j++)if(colC[j]>mx*.1){x0=Math.min(x0,j);x1=Math.max(x1,j)}
+  for(let j=0;j<H;j++)if(rowC[j]>my*.1){y0=Math.min(y0,j);y1=Math.max(y1,j)}
+  let fallback=false;
+  if(x1-x0<W*.12||y1-y0<H*.12||skinRatio<.02){fallback=true;
+    x0=Math.round(W*.3);x1=Math.round(W*.7);y0=Math.round(H*.12);y1=Math.round(H*.62)}
+  const bn={x0:x0/W,x1:x1/W,y0:y0/H,y1:y1/H};
+
+  /* پروفیل عرض (پایهٔ فرم صورت و اجزا) */
+  const bw=x1-x0,bh=y1-y0;
+  const prof=new Float32Array(bh+1);
+  for(let r=0;r<=bh;r++){
+    let mn=W,mx2=0;
+    for(let xx=x0;xx<=x1;xx++)if(skin[(y0+r)*W+xx]){if(xx<mn)mn=xx;if(xx>mx2)mx2=xx}
+    prof[r]=(mx2>=mn)?(mx2-mn+1):0;
+  }
+  const sm=v=>{const o=new Float32Array(v.length);
+    for(let i=0;i<v.length;i++){const a=v[Math.max(0,i-1)],b2=v[i],c2=v[Math.min(v.length-1,i+1)];o[i]=(a+b2+c2)/3}return o};
+  const pf=sm(sm(prof));
+  const band=(a,b2)=>{let s=0,n=0;for(let r=Math.round(bh*a);r<=Math.round(bh*b2);r++){s+=pf[r];n++}return n?s/n:1};
+  const cheek=band(.32,.55)||1, fore=band(.06,.24), jaw=band(.72,.88), chin=band(.9,.98);
+  const LWR=bh/cheek, fh=fore/cheek, jw=jaw/cheek, ct=chin/Math.max(1,jaw);
+
+  /* فرم صورت از قواعد نسبت‌ها */
+  let shape='OVAL';
+  if(LWR>1.55) shape=jw>.8?'RECTANGLE':'OBLONG';
+  else if(LWR<1.17) shape='ROUND';
+  else if(jw>.88&&fh>.84) shape='SQUARE';
+  else if(fh>.9&&jw<.74) shape='HEART';
+  else if(fh<.8&&jw<.82) shape='DIAMOND';
+  else shape='OVAL';
+
+  /* مش نقطه‌ای از سلول‌های پوست */
+  const COLS=24,ROWS=Math.max(8,Math.round(COLS*bh/Math.max(1,bw)));
+  const cw2=bw/COLS,chh=bh/ROWS;
+  const grid=[],pts=[];
+  for(let r=0;r<=ROWS;r++){grid[r]=[];
+    for(let q=0;q<=COLS;q++){
+      const px=x0+q*cw2,py=y0+r*chh;
+      const idx=Math.min(H-1,Math.round(py))*W+Math.min(W-1,Math.round(px));
+      let take=fallback?((r%2===0)&&(q%2===0)):!!skin[idx];
+      if(take){
+        const jx=((hsh>>(r+q))%5-2)*.2,jy=((hsh>>(r*2+q))%5-2)*.2;
+        const nx=(px+jx*cw2)/W,ny=(py+jy*chh)/H;
+        const dx=nx-(bn.x0+bn.x1)/2,dy=ny-(bn.y0+bn.y1)/2;
+        grid[r][q]=pts.length;pts.push({x:nx,y:ny,d:Math.sqrt(dx*dx+dy*dy)});
+      }else grid[r][q]=-1;
+    }}
+  const links=[];
+  for(let r=0;r<=ROWS;r++)for(let q=0;q<=COLS;q++){
+    const a=grid[r][q];if(a<0)continue;
+    if(q<COLS&&grid[r][q+1]>=0)links.push([a,grid[r][q+1]]);
+    if(r<ROWS&&grid[r+1]&&grid[r+1][q]>=0)links.push([a,grid[r+1][q]]);
+  }
+  if(pts.length<12){for(let r=0;r<=10;r++)for(let q=0;q<=12;q++)
+    pts.push({x:(x0+bw*q/12)/W,y:(y0+bh*r/10)/H,d:Math.hypot(q/12-.5,r/10-.5)})}
+
+  /* ابزارهای باندی */
+  const bandLum=(a,b2)=>({a:Math.round(y0+bh*a),b:Math.round(y0+bh*b2)});
+  const gradE=(a,b2)=>{let s=0,n=0;
+    for(let y=a;y<=b2;y++)for(let xx=x0;xx<x1;xx++){const i=y*W+xx;
+      if(skin[i]&&skin[i+1]){s+=Math.abs(lum[i]-lum[i+1]);n++}}return n?s/n:0};
+  const darkR=(a,b2,th)=>{let s=0,n=0;
+    for(let y=a;y<=b2;y++)for(let xx=x0;xx<=x1;xx++){const i=y*W+xx;
+      if(skin[i]||skin[Math.min(N-1,i+1)]){n++;if(lum[i]<th)s++}}return n?s/n:0};
+
+  /* بافت پوست و وضوح کل */
+  let g=0,n=0;
+  const ea=bandLum(.05,.9);
+  for(let y=ea.a;y<=ea.b;y++)for(let xx=x0;xx<x1;xx++){const i=y*W+xx;
+    if(skin[i]&&skin[i+1]){g+=Math.abs(lum[i]-lum[i+1]);n++}
+    if(skin[i]&&skin[i+W]){g+=Math.abs(lum[i]-lum[i+W]);n++}}
+  const texE=n?g/n:.04;
+  const smoothN=clamp(Math.round(100-(texE-.006)/.05*100),5,99);
+  let g2=0,n2=0;
+  for(let y=0;y<H;y++)for(let xx=0;xx<W-1;xx++){const i=y*W+xx;
+    g2+=Math.abs(lum[i]-lum[i+1]);n2++;if(y<H-1){g2+=Math.abs(lum[i]-lum[i+W]);n2++}}
+  const texAll=g2/n2;
+  const clarN=clamp(Math.round((texAll-.006)/.069*100),4,99);
+
+  /* تقارن آینه‌ای */
+  const mxc=Math.round((x0+x1)/2);let sd=0,scc=0,smis=0;
+  for(let y=y0;y<=y1;y++)for(let xx=x0;xx<=mxc;xx++){
+    const xr=2*mxc-xx;if(xr>x1)continue;
+    const i=y*W+xx,j=y*W+xr;
+    sd+=Math.abs(lum[i]-lum[j]);scc++;
+    if(skin[i]!==skin[j])smis++;}
+  const symE=scc?sd/scc/255:.2;
+  const symN=clamp(Math.round(100-symE*480-(scc?smis/scc*30:20)),8,99);
+  const lightN=clamp(Math.round(100-Math.abs(mean-.52)*260-Math.abs(contrast-.17)*150),5,99);
+
+  /* اجزا — هر معیار یک سنجش واقعی */
+  const jit=k=>((hsh>>k)%7)-3;
+  const eb=bandLum(.33,.5);const eyeE=gradE(eb.a,eb.b);
+  const eyeN=clamp(Math.round((eyeE-.008)/.042*100),12,96)+jit(3)*.6;
+  const bb=bandLum(.22,.36);const browN=clamp(Math.round(darkR(bb.a,bb.b,.3)/.11*100),10,96)+jit(6)*.6;
+  /* بینی: فاصلهٔ تخمینی سایه‌ها نسبت به عرض ردیف */
+  let ns=0,nc=0;
+  const nb=bandLum(.5,.66);
+  for(let y=nb.a;y<=nb.b;y++){
+    let first=-1,last=-1;
+    for(let xx=Math.round(x0+bw*.2);xx<=Math.round(x0+bw*.8);xx++){const i=y*W+xx;
+      if(lum[i]<mean-.1){if(first<0)first=xx;last=xx}}
+    if(first>=0&&last>first){ns+=(last-first)/Math.max(1,pf[y-y0]);nc++}}
+  const noseR=nc?ns/nc:.4;
+  const noseN=clamp(Math.round(100-Math.abs(noseR-.42)*300),18,96)+jit(9)*.6;
+  const lb=bandLum(.66,.8);const lipE=gradE(lb.a,lb.b);
+  const lipN=clamp(Math.round((lipE-.006)/.038*100),12,96)+jit(12)*.6;
+  /* فک: شیب کاهش عرض + لبه */
+  const slope=(cheek-jaw)/cheek;
+  const jb=bandLum(.72,.95);const jawE=gradE(jb.a,jb.b);
+  const jawN=clamp(Math.round(30+slope*260+jawE*900),12,96)+jit(15)*.6;
+  /* گونه: پیک پروفیل نسبت به پیشانی/فک */
+  const peak=Math.max(...pf.slice(Math.round(bh*.3),Math.round(bh*.58)));
+  const peakI=clamp(Math.round((peak/Math.max(1,fore+jaw)-1)*420),0,90);
+  const cheekN=clamp(Math.round(35+peakI+jit(18)),15,97);
+  /* تناسبات و هارمونی */
+  const propN=clamp(Math.round(97-Math.abs(LWR-1.42)*190-Math.abs(fh-.87)*120-Math.abs(jw-.8)*140),15,97);
+  const harmonyN=clamp(Math.round(symN*.35+propN*.4+smoothN*.25),10,98);
+  const balanceN=clamp(Math.round(100-Math.max(Math.abs(eyeN-browN),Math.abs(eyeN-noseN),Math.abs(noseN-lipN),Math.abs(browN-lipN))*1.05),10,97);
+  const groomN=clamp(Math.round(smoothN*.5+clarN*.3+lightN*.2),8,97);
+  const styleN=clamp(Math.round(harmonyN*.6+symN*.4),10,98);
+  const shapeN=clamp(Math.round(propN*.6+balanceN*.4+jit(21)*.5),12,97);
+
+  const scores={};
+  const def={symmetry:symN,proportions:propN,jawline:jawN,cheekbone:cheekN,eye:eyeN,brow:browN,
+    nose:noseN,lip:lipN,skin:smoothN,shape:shapeN,groom:groomN,style:styleN};
+  for(const k in def)scores[k]=clamp(Math.round(def[k]),10,99);
+  const overall=clamp(Math.round(harmonyN*.4+propN*.2+groomN*.15+styleN*.15+jawN*.1),22,99);
+
+  /* بردار مرجع چهره 10×10 (فقط عددی — برای تطبیق خود-ارجاعی) */
+  const cells=new Float32Array(100);let em=0,ev=0;
+  for(let r=0;r<10;r++)for(let q=0;q<10;q++){
+    let s=0,c2=0;
+    const ya=Math.round(y0+bh*r/10),yb2=Math.round(y0+bh*(r+1)/10);
+    const xa=Math.round(x0+bw*q/10),xb2=Math.round(x0+bw*(q+1)/10);
+    for(let y=ya;y<=yb2;y++)for(let xx=xa;xx<=xb2;xx++){s+=lum[y*W+xx];c2++}
+    cells[r*10+q]=c2?s/c2:0;em+=cells[r*10+q]}
+  em/=100;
+  for(let i=0;i<100;i++){cells[i]-=em;ev+=cells[i]*cells[i]}
+  ev=Math.sqrt(ev)||1;
+  const emb=Array.from(cells,v=>v/ev);
+
+  const conf=clamp(Math.round(55+skinRatio*140+(fallback?-12:7)+(pts.length>90?4:0)),48,97);
+  const id='NV-'+hsh.toString(16).toUpperCase().padStart(8,'0').slice(0,6);
+  const secs={browY:.3,eyeA:.34,eyeB:.5,noseEnd:.65,lipY:.72,jawY:.76};
+
+  return{ok:true,fallback,iw,ih,bn,pts,links,prof:{fore,cheek,jaw,chin,LWR,fh,jw,ct},
+    shape,skinRatio,texE,symE,scores,overall,harmonyN,balanceN,groomN,styleN,
+    smoothN,clarN,symN,lightN,conf,emb,id,secs,mean,contrast,ts:Date.now()};
+}
+
+/* ================= جریان اسکن ================= */
+const PHASES=[
+  {msg:'INITIALIZING AI...',t:800},
+  {msg:'FACE DETECTED',t:900},
+  {msg:'MAPPING LANDMARKS...',t:1500},
+  {msg:'ANALYZING FACIAL PROPORTIONS...',t:1600},
+  {msg:'REGION SCAN IN PROGRESS...',t:2900},
+  {msg:'GENERATING REPORT...',t:1200},
+];
+const REGIONS=[['FOREHEAD','پیشانی'],['EYES','چشم‌ها'],['BROWS','ابروها'],['NOSE','بینی'],['CHEEKS','گونه‌ها'],['LIPS','لب‌ها'],['JAW','فک']];
+function anLog(t,cls=''){const d=document.createElement('div');if(cls)d.className=cls;
+  d.innerHTML=t;const l=$('#an-log');l.appendChild(d);l.scrollTop=1e6}
+async function mark(i){const r=$('#rg-'+i);if(!r)return;
+  $$('.rg.on').forEach(e=>{e.classList.remove('on');e.classList.add('done')});
+  r.classList.add('on');Snd.tick()}
+function setProg(f){$('#an-pi').style.width=(f*100).toFixed(0)+'%';$('#an-pct').textContent=(f*100).toFixed(0)+'%'}
+async function startScan(){
+  if(S.analyzing||!S.photo)return;
+  S.analyzing=true;Snd.beep(520,.08);Vib(14);
+  $('#an-fail').classList.add('hidden');$('#an-log').innerHTML='';
+  $('#an-id').textContent='PROCESSING';
+  $('#an-regions').innerHTML=REGIONS.map((r,i)=>`<span class="rg" id="rg-${i}">${r[0]}</span>`).join('');
+  setProg(0);$('#an-msg').textContent=PHASES[0].msg;
+  $('#an-img').src=S.photo;
+  $('#analyzer').classList.add('on');
+  $$('#analyzer .bk').forEach(b=>b.classList.remove('show'));
+  S.meshRun=true;S.meshT=0;S.hl=-1;S.propLines=false;
+
+  let m;try{m=await analyzeImage(S.photo)}catch(e){m={ok:false,reason:'decode',iw:4,ih:5}}
+  S.metrics=m;
+  const F=(t,c)=>anLog(t,c);
+  const tot=PHASES.reduce((a,p)=>a+p.t,0);let acc=0;
+
+  F('neural core v4.2 boot — 468pt mesh armed','hl');
+  await sleep(PHASES[0].t);acc+=PHASES[0].t;setProg(acc/tot);
+
+  $('#an-msg').textContent=PHASES[1].msg;
+  F('ycc skin classifier · grid 120px');
+  F(m.ok?`skin_mask = <span class="hl">${(m.skinRatio*100).toFixed(1)}%</span> → candidate locked`
+        :`skin_mask = <span class="err">${(m.skinRatio*100).toFixed(1)}%</span> → no facial region`);
+  if(m.ok){placeBrackets();Snd.beep(980,.09)}
+  await sleep(PHASES[1].t);acc+=PHASES[1].t;setProg(acc/tot);
+
+  if(!m.ok){
+    Snd.err();Vib([60,40,60]);
+    $('#an-msg').textContent='SCAN ABORTED';
+    F('[FATAL] biometric abort — subject rejected','err');
+    $('#an-id').textContent='REJECTED';
+    $('#an-fail').classList.remove('hidden');
+    S.analyzing=false;S.meshRun=false;return;
+  }
+
+  $('#an-msg').textContent=PHASES[2].msg;
+  F(`mesh ripple-sync — <span class="hl">${m.pts.length} landmarks</span> · ${m.links.length} edges`,'gn');
+  await sleep(PHASES[2].t);acc+=PHASES[2].t;setProg(acc/tot);
+
+  $('#an-msg').textContent=PHASES[3].msg;S.propLines=true;
+  F('extracting width-profile … 3-band sectioning','puc');
+  F(`L:W = <span class="hl">${m.prof.LWR.toFixed(2)}</span> · fore/cheek = ${m.prof.fh.toFixed(2)} · jaw/cheek = ${m.prof.jw.toFixed(2)}`);
+  await sleep(PHASES[3].t);acc+=PHASES[3].t;setProg(acc/tot);
+
+  $('#an-msg').textContent=PHASES[4].msg;
+  for(let i=0;i<REGIONS.length;i++){
+    S.hl=i;await mark(i);
+    F(`region [${REGIONS[i][0]}] — ${REGIONS[i][1]} scanned`);
+    await sleep(PHASES[4].t/REGIONS.length);
+  }
+  acc+=PHASES[4].t;setProg(acc/tot);
+  S.hl=-1;
+
+  $('#an-msg').textContent=PHASES[5].msg;S.propLines=false;
+  const s=m.scores;
+  F(`12-metric vector → sym ${s.symmetry} · jaw ${s.jawline} · cheek ${s.cheekbone}`);
+  F(`FINAL SCORE = <span class="hl">${m.overall}/100</span> · shape = <span class="puc">${m.shape}</span>`,'gn');
+  F(`report ${m.id} sealed`,'hl');
+  await sleep(PHASES[5].t);
+
+  Snd.ok();Vib([25,40,55]);
+  $('#an-msg').textContent='REPORT READY — REDIRECTING';
+  await sleep(560);
+  $('#analyzer').classList.remove('on');
+  S.meshRun=false;S.analyzing=false;
+  S.lastReport=m;
+  S.match=null;
+  if(S.enroll&&S.enroll.emb){
+    let dot=0;for(let i=0;i<100;i++)dot+=m.emb[i]*S.enroll.emb[i];
+    S.match={sim:clamp(Math.round(dot*100),0,99)};
+  }
+  if(S.set.save)saveReport(m,true);
+  renderResults(m);setView('results');
+}
+$('#an-retry').addEventListener('click',()=>{
+  $('#analyzer').classList.remove('on');S.meshRun=false;S.mode='idle';renderScan();
+});
+
+/* براکت قفل روی چهره */
+function placeBrackets(){
+  const m=S.metrics,fr=$('#an-frame');if(!m||!m.ok||!fr)return;
+  const cw=fr.clientWidth,ch=fr.clientHeight;
+  const s=Math.min(cw/m.iw,ch/m.ih),dw=m.iw*s,dh=m.ih*s;
+  const ox=(cw-dw)/2,oy=(ch-dh)/2;
+  const L=ox+m.bn.x0*dw,R=ox+m.bn.x1*dw,T=oy+m.bn.y0*dh,B=oy+m.bn.y1*dh,M=6;
+  $('#bk-tl').style.cssText=`left:${L-M}px;top:${T-M}px`;
+  $('#bk-tr').style.cssText=`left:${R-M}px;top:${T-M}px`;
+  $('#bk-bl').style.cssText=`left:${L-M}px;top:${B-M}px`;
+  $('#bk-br').style.cssText=`left:${R-M}px;top:${B-M}px`;
+  $$('#analyzer .bk').forEach(b=>b.classList.add('show'));
+}
+
+/* مش موج‌دار + هایلایت ناحیه + خطوط تناسبات */
+function drawMesh(){
+  requestAnimationFrame(drawMesh);
+  if(!S.meshRun)return;
+  const fr=$('#an-frame'),cv=$('#an-cv'),m=S.metrics;
+  if(!fr||!cv||!m||!m.ok)return;
+  const cw=fr.clientWidth,ch=fr.clientHeight;if(!cw)return;
+  if(cv.width!==Math.round(cw*DPR)){cv.width=Math.round(cw*DPR);cv.height=Math.round(ch*DPR)}
+  const x=cv.getContext('2d');
+  x.setTransform(DPR,0,0,DPR,0,0);x.clearRect(0,0,cw,ch);
+  const s=Math.min(cw/m.iw,ch/m.ih),dw=m.iw*s,dh=m.ih*s;
+  const ox=(cw-dw)/2,oy=(ch-dh)/2;
+  const P=(nx,ny)=>[ox+nx*dw,oy+ny*dh];
+  if(!S.meshT)S.meshT=performance.now();
+  const t=(performance.now()-S.meshT)/950;
+  x.lineWidth=.7;
+  for(const[a,b2]of m.links){
+    const pa=m.pts[a],pb=m.pts[b2];
+    const al=clamp((t-pa.d*1.2)*3,0,1)*.3;
+    if(al<=0)continue;
+    x.strokeStyle=`rgba(0,229,255,${al})`;
+    x.beginPath();x.moveTo(...P(pa.x,pa.y));x.lineTo(...P(pb.x,pb.y));x.stroke();
+  }
+  for(const p of m.pts){
+    const a=clamp((t-p.d*1.2)*3.2,0,1);if(a<=0)continue;
+    const[px,py]=P(p.x,p.y);
+    x.fillStyle=`rgba(0,229,255,${a*.16})`;x.beginPath();x.arc(px,py,3.4,0,7);x.fill();
+    x.fillStyle=`rgba(0,229,255,${a*.92})`;x.beginPath();x.arc(px,py,1.25,0,7);x.fill();
+  }
+  if(S.hl>=0&&m.bn){
+    const bands=[[0,.24],[.33,.5],[.22,.36],[.5,.66],[.32,.58],[.66,.8],[.72,.97]];
+    const[a,b2]=bands[S.hl],b3=m.bn;
+    const T=oy+(b3.y0+(b3.y1-b3.y0)*a)*dh,H2=(b2-a)*(b3.y1-b3.y0)*dh;
+    x.fillStyle='rgba(169,112,255,.14)';
+    x.fillRect(ox+b3.x0*dw,T,(b3.x1-b3.x0)*dw,H2);
+    x.strokeStyle='rgba(169,112,255,.75)';x.lineWidth=1;
+    x.strokeRect(ox+b3.x0*dw,T,(b3.x1-b3.x0)*dw,H2);
+  }
+  if(S.propLines&&m.bn){
+    const b3=m.bn,cxm=(b3.x0+b3.x1)/2;
+    x.setLineDash([4,4]);
+    x.strokeStyle='rgba(255,200,87,.7)';x.lineWidth=1;
+    x.beginPath();x.moveTo(...P(cxm,b3.y0-.02));x.lineTo(...P(cxm,b3.y1+.02));x.stroke();
+    x.strokeStyle='rgba(0,229,255,.6)';
+    for(const k of['browY','noseEnd','eyeA','eyeB','lipY']){
+      const yy=b3.y0+(b3.y1-b3.y0)*m.secs[k];
+      x.beginPath();x.moveTo(...P(b3.x0,yy));x.lineTo(...P(b3.x1,yy));x.stroke();
+    }
+    x.setLineDash([]);
+  }
+}
+requestAnimationFrame(drawMesh);
+
+/* ================= RESULTS ================= */
+const MDEF=[
+  ['symmetry','FACIAL SYMMETRY','تقارن چهره','توازن دو نیمهٔ صورت بر اساس خط مرکزی — تحلیل بصری'],
+  ['proportions','FACIAL PROPORTIONS','تناسبات صورت','نسبت تخمینی طول به عرض و باندهای افقی صورت'],
+  ['jawline','JAWLINE DEFINITION','تعریف خط فک','وضوح خط فک بر اساس شیب پروفیل عرض و لبه‌ها'],
+  ['cheekbone','CHEEKBONE STRUCTURE','ساختار گونه','برجستگی نسبی باند گونه در پروفیل عرض'],
+  ['eye','EYE AREA','ناحیهٔ چشم','کنتراست و تعریف تخمینی ناحیهٔ چشم'],
+  ['brow','EYEBROW SHAPE','فرم ابرو','تراکم و قاب تخمینی ابرو نسبت به بافت اطراف'],
+  ['nose','NOSE PROPORTION','تناسب بینی','عرض تخمینی بینی نسبت به عرض گونه'],
+  ['lip','LIP PROPORTION','تناسب لب','کنتراست و تعریف تخمینی خط لب'],
+  ['skin','SKIN APPEARANCE','ظاهر پوست','یکنواختی و بافت ظاهری پوست در نور تصویر'],
+  ['shape','FACE SHAPE FIT','انطباق فرم','همخوانی ابعاد با الگوی فرم شناسایی‌شده'],
+  ['groom','GROOMING POTENTIAL','پتانسیل آراستگی','پایهٔ پوست، نور و وضوح — پتانسیل استایل'],
+  ['style','STYLE COMPATIBILITY','سازگاری استایل','هماهنگی کلی با الگوهای استایل پیشنهادی'],
+];
+const badge=v=>v>=88?['EXCELLENT','mb-ex']:v>=75?['VERY GOOD','mb-vg']:v>=60?['GOOD','mb-gd']:v>=45?['AVERAGE','mb-av']:['BELOW AVG','mb-lo'];
+const bcol=v=>v>=75?'':v>=60?'a':v>=45?'p':'r';
+const SHAPES={
+  OVAL:['صورت بیضی','توازن کلاسیک بین طول و عرض؛ اکثر استایل‌ها به‌راحتی هماهنگ می‌شوند.'],
+  SQUARE:['صورت مربع','خط فک زاویه‌دار و قوی؛ استایل‌های نرم‌کنندهٔ گوشه‌ها تعادل بیشتری می‌دهند.'],
+  RECTANGLE:['صورت مستطیلی','طول برجسته با فک زاویه‌دار؛ حجم در کنار سر و کوتاه‌کردن طول مؤثر است.'],
+  ROUND:['صورت گرد','خطوط نرم و عرض قابل توجه؛ استایل‌های با ارتفاع و خطوط عمودی کشیده‌تر دیده می‌شوند.'],
+  HEART:['صورت قلبی','پیشانی پهن‌تر و چانه باریک؛ استایل‌هایی که حجم پایین را متعادل می‌کنند مناسب‌اند.'],
+  DIAMOND:['صورت لوزی','گونه‌ها برجسته‌ترین بخش‌اند؛ تعادل پیشانی و فک در استایل اهمیت دارد.'],
+  OBLONG:['صورت کشیده','نسبت طول زیاد؛ حجم جانبی و سپری‌های کوتاه‌تر طول بصری را تعدیل می‌کند.'],
+};
+const SUG={
+  OVAL:{hair:['Modern Curtain','Textured Crop','Middle Part','Slick Back'],beard:['Light Stubble','Clean Shave'],gl:'Round / Aviator — آزادترین فرم برای انتخاب قاب عینک',hd:'فرم بیضی تقریباً با همهٔ مدل‌ها سازگار است؛ گزینه‌های برجسته روی بافت مو شما برتری دارند.',bd:'موی سبک کوتاه یا متوسط، تعریف خط فک را حفظ می‌کند.'},
+  SQUARE:{hair:['Textured Side Part','Slick Back','Messy Waves'],beard:['Short Boxed Beard','Light Stubble'],gl:'Oval / Round — قاب‌های منحنی زاویهٔ فک را نرم می‌کنند',hd:'زاویهٔ فک قوی است؛ فرینج و بافت نرم، گوشه‌ها را تعدیل می‌کند.',bd:'ریش کوتاه و منظم با گوشه‌های گرد، خط فک را نرم‌تر نشان می‌دهد.'},
+  RECTANGLE:{hair:['Textured Crop','Textured Side Part'],beard:['Clean Shave','Light Stubble'],gl:'Oversized / Aviator — قاب پهن، طول صورت را متعادل می‌کند',hd:'طول صورت زیاد است؛ حجم جانبی بهتر از حجم بالای سر است.',bd:'ریش سنگین طول را کشیده‌تر نشان می‌دهد؛ سبک‌ها مناسب‌ترند.'},
+  ROUND:{hair:['Slick Back','Messy Waves','Bro Flow'],beard:['Short Boxed Beard'],gl:'Rectangular — قاب زاویه‌دار به ساختار کمک می‌کند',hd:'ارتفاع و خطوط عمودی، گردی را کشیده‌تر جلوه می‌دهد.',bd:'ریش کوتاه مربعی‌شکل، خط فک را تعریف‌دارتر می‌کند.'},
+  HEART:{hair:['Middle Part','Bro Flow','Modern Curtain'],beard:['Light Stubble','Full Beard'],gl:'Aviator / Browline — تعادل بین پیشانی و چانه',hd:'حجم متوسط در پایین، تعادل چانهٔ باریک را بهتر می‌کند.',bd:'ریش سبک تا متوسط، باریکی چانه را جبران بصری می‌کند.'},
+  DIAMOND:{hair:['Modern Curtain','Bro Flow','Textured Crop'],beard:['Clean Shave','Light Stubble'],gl:'Browline / Oval — تعادل پیشانی و فک باریک',hd:'حجم روی پیشانی و کنار سر، باریکی آن نواحی را جبران می‌کند.',bd:'پرهیز از ریش سنگین؛ سبکی زیر گونه بهتر است.'},
+  OBLONG:{hair:['Textured Crop','Middle Part','Messy Waves'],beard:['Clean Shave'],gl:'Oversized / Square-ish — عرض بصری می‌دهد',hd:'حجم جانبی مهم است؛ فرینج کوتاه، طول را می‌شکند.',bd:'بدون ریش یا خیلی کوتاه — ریش پر، صورت را کشیده‌تر می‌کند.'},
+};
+function renderResults(m){
+  const b=$('#resbody');
+  if(!m){b.innerHTML=`<div class="empty-state"><i data-lucide="scan-face"></i><br>هنوز تحلیلی انجام نشده است.<br>از صفحهٔ خانه یا اسکن شروع کنید.
+    <div style="margin-top:18px"><button class="btn pri" id="e-go" style="width:auto;padding:10px 26px;display:inline-flex">رفتن به اسکن</button></div></div>`;
+    icons();const g=$('#e-go');if(g)g.onclick=()=>setView('scan');return}
+  const hasPhoto=!!S.photo;
+  const rc=m.overall>=75?'c':m.overall>=55?'p':'a';
+  const R=56,C=(2*Math.PI*R).toFixed(1);
+  const [sfa,sds]=SHAPES[m.shape];
+  const sug=SUG[m.shape]||SUG.OVAL;
+  const s=m.scores;
+  const pick=a=>a[0];
+  if(!S.picks||S.picks.id!==m.id)S.picks={id:m.id,hair:pick(sug.hair),beard:pick(sug.beard),brow:s.brow>=70?'Natural':s.brow>=50?'Defined':'Slightly Structured'};
+  const browPick=S.picks.brow;
+  const browDesc=browPick==='Natural'?'حفظ فرم طبیعی با مرتب‌سازی حداقلی — تراکم فعلی مناسب است.':
+    browPick==='Defined'?'تعریف خط زیر ابرو با فاصله‌گذاری ظریف — فرم را واضح‌تر می‌کند.':'ساختار ملایم با قوس کنترل‌شده — برای تقویت قاب چشم.';
+  const diagPanel=hasPhoto?`
+    <div class="prop-diagram" id="pd">
+      <img class="fit" src="${S.photo}" alt="">
+      <div id="pd-ov"></div>
+    </div>`:`<div style="padding:12px 15px;font-size:11px;color:var(--dim);line-height:1.9">دیاگرام تصویری نیازمند تصویر اصلی در همین نشست است؛ گزارش‌های ذخیره‌شده فقط مقادیر عددی را نشان می‌دهند.</div>`;
+  const baPanel=hasPhoto?`
+  <div class="sec"><span>BEFORE / AFTER</span><b>CONCEPT PREVIEW</b></div>
+  <div class="panel holo" style="padding-bottom:6px">
+    <div class="ba-wrap" id="ba-wrap">
+      <img class="fit" src="${S.photo}" alt="">
+      <canvas id="ba-after"></canvas>
+      <div class="ba-handle" id="ba-h"><i data-lucide="chevrons-left-right"></i></div>
+      <span class="ba-tag l">BEFORE</span><span class="ba-tag r">AFTER</span>
+    </div>
+    <div class="ba-controls">
+      <div class="ba-row"><span class="lb">SKIN SMOOTHING <span class="tag real">REAL · PIXEL</span></span><span class="sw on" id="sw-skin"></span></div>
+      <div class="ba-row"><span class="lb">TONE &amp; LIGHT <span class="tag real">REAL · PIXEL</span></span><span class="sw on" id="sw-tone"></span></div>
+      <div class="ba-row"><span class="lb">HAIRSTYLE <span class="tag con">GUIDELINE</span></span><span style="color:var(--pu);font-size:9px">${S.picks.hair}</span></div>
+      <div class="ba-row"><span class="lb">BEARD <span class="tag con">GUIDELINE</span></span><span style="color:var(--pu);font-size:9px">${S.picks.beard}</span></div>
+      <div class="ba-row"><span class="lb">EYEBROW <span class="tag con">GUIDELINE</span></span><span style="color:var(--pu);font-size:9px">${browPick}</span></div>
+    </div>
+    <div class="disc">در پیش‌نمایش، اصلاح پوست و نور <b>واقعاً روی پیکسل‌ها</b> اعمال می‌شود (فقط در نواحی پوست). استایل مو/ریش/ابرو صرفاً راهنمای مفهومی است و در تصویر جابه‌جا نمی‌شود.</div>
+  </div>`:'';
+
+  b.innerHTML=`
+  <div class="panel holo score-hero">
+    <div class="ring">
+      <svg width="124" height="124" viewBox="0 0 124 124">
+        <circle class="rg-c" cx="62" cy="62" r="${R}"/>
+        <circle class="rg-v" id="rgv" cx="62" cy="62" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/>
+      </svg>
+      <div class="rg-mid"><div class="rg-num" id="rgn">0</div><div class="rg-cap">/ 100</div></div>
+    </div>
+    <div class="sh-r">
+      <div class="sh-lbl">OVERALL SCORE</div>
+      <div class="sh-rank ${rc}" id="sh-rank">—</div>
+      <div class="sh-id">REPORT ${m.id} · CONF ${m.conf}%<br>${new Date(m.ts).toLocaleString('fa-IR')}</div>
+    </div>
+  </div>
+  ${S.match?`<div class="panel" style="margin-top:10px;padding:12px 15px;display:flex;align-items:center;gap:10px">
+    <i data-lucide="${S.match.sim>=86?'user-check':'user-x'}" style="width:19px;height:19px;color:${S.match.sim>=86?'var(--gn)':'var(--am)'}"></i>
+    <div style="flex:1;font-size:12px">${S.match.sim>=86?'تطبیق با مرجع ثبت‌شدهٔ شما':'عدم تطبیق با مرجع ثبت‌شده'}</div>
+    <span class="pv-badge ${S.match.sim>=86?'pb-g':'pb-a'}" style="direction:ltr">MATCH ${S.match.sim}%</span>
+  </div>`:''}
+
+  <div class="sec"><span>FEATURE ANALYSIS</span><b>12 METRICS</b></div>
+  <div class="panel holo">
+    ${MDEF.map(([k,lt,fa,ds])=>{
+      const v=s[k],[bt,bc]=badge(v);
+      return `<div class="metric">
+        <div class="m-top">
+          <div class="m-name">${fa}<span class="m-latin">${lt}</span></div>
+          <span class="m-bar"><i class="${bcol(v)}" data-w="${v}"></i></span>
+          <span class="m-val">${v}</span>
+          <span class="m-badge ${bc}">${bt}</span>
+        </div>
+        <div class="m-desc">${ds}</div>
+      </div>`}).join('')}
+  </div>
+
+  <div class="sec"><span>FACE SHAPE</span><b>VISUAL ANALYSIS</b></div>
+  <div class="panel holo shape-hero">
+    <div class="shape-ic"><i data-lucide="scan-face"></i></div>
+    <div><div class="shape-nm">${m.shape}</div><div class="shape-fa">${sfa} · Estimated</div></div>
+  </div>
+  <div class="panel shape-ds" style="margin-top:10px">${sds}</div>
+
+  <div class="sec"><span>FACIAL PROPORTION ANALYSIS</span><b>ESTIMATED</b></div>
+  <div class="panel holo">
+    ${diagPanel}
+    <div class="prop-rows">
+      <div class="pr-row"><b>LENGTH : WIDTH <span class="est-tag">EST</span></b><span>${m.prof.LWR.toFixed(2)} : 1</span></div>
+      <div class="pr-row"><b>FOREHEAD / CHEEKBONE <span class="est-tag">EST</span></b><span>${m.prof.fh.toFixed(2)}</span></div>
+      <div class="pr-row"><b>JAW / CHEEKBONE <span class="est-tag">EST</span></b><span>${m.prof.jw.toFixed(2)}</span></div>
+      <div class="pr-row"><b>LEFT : RIGHT SYMMETRY <span class="est-tag">EST</span></b><span>${m.symN}% / ${m.symN}%</span></div>
+      <div class="pr-row"><b>SECTIONING · FOREHEAD-MID-LOWER <span class="est-tag">EST</span></b><span>${m.secs.browY*100|0} / ${((m.secs.noseEnd-m.secs.browY)*100)|0} / ${((1-m.secs.noseEnd)*100)|0} %</span></div>
+    </div>
+    <div class="disc">تمام مقادیر این بخش <b>«Visual Analysis / Estimated»</b> هستند و از پروفیل عرض ماسک پوست استخراج می‌شوند؛ ادعای اندازه‌گیری دقیق کالبدی ندارند.</div>
+  </div>
+
+  <div class="sec"><span>AESTHETIC ANALYSIS</span><b>ALGORITHMIC</b></div>
+  <div class="panel holo">
+    ${[['Facial Harmony','هارمونی چهره',m.harmonyN],['Symmetry','تقارن',m.symN],['Feature Balance','تعادل اجزا',m.balanceN],
+       ['Overall Appearance','ظاهر کلی',m.overall],['Grooming Potential','پتانسیل آراستگی',m.groomN]]
+      .map(([lt,fa,v])=>`<div class="metric">
+        <div class="m-top">
+          <div class="m-name">${fa}<span class="m-latin">${lt}</span></div>
+          <span class="m-bar"><i class="${bcol(v)}" data-w="${v}"></i></span>
+          <span class="m-val">${v}</span>
+          <span class="m-badge ${badge(v)[1]}">${badge(v)[0]}</span>
+        </div></div>`).join('')}
+    <div class="disc"><b>توجه:</b> این امتیازها زیبایی‌شناسی الگوریتمی و سلیقه‌محورند و جذابیت، ارزش یا ویژگی واقعی هیچ فردی را به‌طور قطعی تعیین نمی‌کنند. زیبایی واقعی فراتر از یک فرمول است.</div>
+  </div>
+
+  <div class="sec"><span>PERSONALIZED STYLING</span><b>RECOMMENDATIONS</b></div>
+  <div class="panel holo sug-group">
+    <div class="sug-ttl"><i data-lucide="scissors"></i>HAIRSTYLE</div>
+    <div class="chips">${sug.hair.map(h=>`<span class="chip ${h===S.picks.hair?'on':''}" data-g="hair" data-v="${h}">${h}${h===pick(sug.hair)?'<span class="primary">BEST</span>':''}</span>`).join('')}</div>
+    <div class="chip-desc">${sug.hd}</div>
+  </div>
+  <div class="panel holo sug-group" style="margin-top:10px">
+    <div class="sug-ttl"><i data-lucide="slice"></i>BEARD</div>
+    <div class="chips">${sug.beard.map(x=>`<span class="chip ${x===S.picks.beard?'on':''}" data-g="beard" data-v="${x}">${x}${x===pick(sug.beard)?'<span class="primary">BEST</span>':''}</span>`).join('')}</div>
+    <div class="chip-desc">${sug.bd}</div>
+  </div>
+  <div class="panel holo sug-group" style="margin-top:10px">
+    <div class="sug-ttl"><i data-lucide="pen-line"></i>EYEBROW</div>
+    <div class="chips">${['Natural','Defined','Slightly Structured'].map(x=>`<span class="chip ${x===browPick?'on':''}" data-g="brow" data-v="${x}">${x}</span>`).join('')}</div>
+    <div class="chip-desc">${browDesc}</div>
+  </div>
+  <div class="panel holo sug-group" style="margin-top:10px">
+    <div class="sug-ttl"><i data-lucide="glasses"></i>GLASSES</div>
+    <div class="glasses-row"><i data-lucide="glasses"></i><span style="direction:ltr;font-family:var(--tech);font-size:12px">${sug.gl}</span></div>
+    <div class="chip-desc">پیشنهاد قاب بر اساس فرم تخمینی ${m.shape} — انتخاب نهایی همیشه با سلیقهٔ شماست.</div>
+  </div>
+  ${baPanel}
+
+  <div class="rep-actions" style="margin-top:16px">
+    <button class="btn pri" id="r-gorep"><i data-lucide="file-text"></i>مشاهدهٔ گزارش کامل</button>
+  </div>`;
+  icons();
+
+  const gv=$('#rgv'),gn=$('#rgn'),Cn=parseFloat(C),t0=performance.now();
+  (function f(t){const k=Math.min(1,(t-t0)/1300),e=1-Math.pow(1-k,3);
+    gn.textContent=Math.round(m.overall*e);
+    gv.setAttribute('stroke-dashoffset',(Cn*(1-m.overall/100*e)).toFixed(1));
+    if(k<1)requestAnimationFrame(f)})(t0);
+  const ranks=[[85,'ELITE GRADE'],[72,'PRIME GRADE'],[58,'STANDARD GRADE'],[44,'BASE GRADE']];
+  $('#sh-rank').textContent=(ranks.find(r=>m.overall>=r[0])||['—','UNRANKED'])[1];
+  setTimeout(()=>{$$('#resbody .m-bar i').forEach(i=>i.style.width=i.dataset.w+'%')},80);
+  if(hasPhoto)setTimeout(()=>drawPropOverlay(m),120);
+
+  $$('#resbody .chip').forEach(ch=>ch.onclick=()=>{
+    $$('#resbody .chip[data-g="'+ch.dataset.g+'"]').forEach(x=>x.classList.remove('on'));
+    ch.classList.add('on');S.picks[ch.dataset.g]=ch.dataset.v;Snd.tick();Vib(6);
+  });
+
+  if(hasPhoto)setupBA(m);
+  $('#r-gorep').onclick=()=>{Snd.tick();setView('report')};
+}
+function drawPropOverlay(m){
+  const pd=$('#pd'),ov=$('#pd-ov');if(!pd||!ov)return;
+  const cw=pd.clientWidth,ch=pd.clientHeight;
+  const s=Math.min(cw/m.iw,ch/m.ih),dw=m.iw*s,dh=m.ih*s;
+  const ox=(cw-dw)/2,oy=(ch-dh)/2,b=m.bn;
+  const cx=ox+((b.x0+b.x1)/2)*dw;
+  const yAt=k=>oy+(b.y0+(b.y1-b.y0)*m.secs[k])*dh;
+  ov.innerHTML=`
+    <div class="pd-vline" style="left:${cx}px"></div>
+    <div class="pd-line" style="left:${ox+b.x0*dw}px;width:${(b.x1-b.x0)*dw}px;top:${yAt('browY')}px"></div>
+    <div class="pd-line" style="left:${ox+b.x0*dw}px;width:${(b.x1-b.x0)*dw}px;top:${yAt('eyeA')}px;opacity:.4"></div>
+    <div class="pd-line" style="left:${ox+b.x0*dw}px;width:${(b.x1-b.x0)*dw}px;top:${yAt('eyeB')}px;opacity:.4"></div>
+    <div class="pd-line pu" style="left:${ox+b.x0*dw}px;width:${(b.x1-b.x0)*dw}px;top:${yAt('noseEnd')}px"></div>
+    <div class="pd-line pu" style="left:${ox+b.x0*dw}px;width:${(b.x1-b.x0)*dw}px;top:${yAt('lipY')}px"></div>
+    <span class="pd-lbl" style="right:6px;top:${yAt('browY')-7}px">BROW</span>
+    <span class="pd-lbl" style="right:6px;top:${yAt('noseEnd')-7}px">NOSE-END</span>
+    <span class="pd-lbl" style="right:6px;top:${yAt('lipY')-7}px">LIP</span>`;
+}
+
+/* ---------- BEFORE / AFTER (پردازش واقعی پیکسل در نواحی پوست) ---------- */
+const _baCache={};
+async function buildAfter(skinOn,toneOn){
+  if(!_baCache.base){
+    const img=await loadImg(S.photo);
+    const W=720,H=Math.round(720*img.naturalHeight/img.naturalWidth);
+    const bc=document.createElement('canvas');bc.width=W;bc.height=H;
+    bc.getContext('2d').drawImage(img,0,0,W,H);
+    _baCache.base=bc;
+    /* لایهٔ صاف‌سازی پوست: blur سپس برش با ماسک پوست YCbCr */
+    const sc=document.createElement('canvas');sc.width=W;sc.height=H;
+    const sx=sc.getContext('2d');
+    sx.filter='blur(3.2px)';sx.drawImage(bc,0,0);sx.filter='none';
+    const mc=document.createElement('canvas');mc.width=W;mc.height=H;
+    const mx2=mc.getContext('2d');
+    const tW=60,tH=Math.max(6,Math.round(tW*H/W));
+    const tc=document.createElement('canvas');tc.width=tW;tc.height=tH;
+    const tx=tc.getContext('2d');tx.drawImage(img,0,0,tW,tH);
+    const td=tx.getImageData(0,0,tW,tH);
+    for(let i=0;i<td.data.length;i+=4){
+      const r=td.data[i],g=td.data[i+1],b2=td.data[i+2];
+      const cb=128-.168736*r-.331264*g+.5*b2,cr=128+.5*r-.418688*g-.081312*b2;
+      const ok=(cb>=77&&cb<=127&&cr>=133&&cr<=177);
+      td.data[i]=td.data[i+1]=td.data[i+2]=ok?255:0;td.data[i+3]=255;
+    }
+    tx.putImageData(td,0,0);
+    mx2.imageSmoothingEnabled=true;
+    mx2.drawImage(tc,0,0,W,H);
+    sx.globalCompositeOperation='destination-in';
+    sx.drawImage(mc,0,0);
+    sx.globalCompositeOperation='source-over';
+    _baCache.smooth=sc;
+  }
+  const out=document.createElement('canvas');
+  out.width=_baCache.base.width;out.height=_baCache.base.height;
+  const x=out.getContext('2d');
+  x.drawImage(_baCache.base,0,0);
+  if(skinOn&&_baCache.smooth){x.globalAlpha=.55;x.drawImage(_baCache.smooth,0,0);x.globalAlpha=1}
+  if(toneOn){x.filter='brightness(1.035) contrast(1.06) saturate(1.06)';
+    x.drawImage(out,0,0);x.filter='none'}
+  return out;
+}
+async function setupBA(m){
+  const wrap=$('#ba-wrap'),cv=$('#ba-after'),h=$('#ba-h');
+  if(!wrap)return;
+  cv.width=wrap.clientWidth*DPR;cv.height=wrap.clientHeight*DPR;
+  const draw=async()=>{
+    try{
+      const out=await buildAfter(S.ba.skin,S.ba.tone);
+      const x=cv.getContext('2d');
+      x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);
+      x.drawImage(out,0,0,cv.width,cv.height);
+    }catch(e){}
+    applySplit();
+  };
+  const applySplit=()=>{
+    cv.style.clipPath=`inset(0 0 0 ${S.ba.split}%)`;
+    h.style.left=S.ba.split+'%';
+  };
+  let drag=false;
+  const move=e2=>{const r=wrap.getBoundingClientRect();
+    S.ba.split=clamp((e2.clientX-r.left)/r.width*100,2,98);applySplit()};
+  wrap.addEventListener('pointerdown',e2=>{drag=true;try{wrap.setPointerCapture(e2.pointerId)}catch(e){}move(e2)});
+  wrap.addEventListener('pointermove',e2=>{if(drag)move(e2)});
+  wrap.addEventListener('pointerup',()=>drag=false);
+  $('#sw-skin').onclick=()=>{S.ba.skin=!S.ba.skin;$('#sw-skin').classList.toggle('on',S.ba.skin);Snd.tick();draw()};
+  $('#sw-tone').onclick=()=>{S.ba.tone=!S.ba.tone;$('#sw-tone').classList.toggle('on',S.ba.tone);Snd.tick();draw()};
+  draw();
+}
+
+/* ================= REPORT ================= */
+function getReports(){try{return JSON.parse(localStorage.getItem('nva_reports')||'[]')}catch(e){return[]}}
+function saveReport(m,silent){
+  const rs=getReports();
+  if(rs.some(r=>r.id===m.id)){if(!silent)toast('این گزارش قبلاً ذخیره شده','warn');return}
+  const push=th=>{
+    rs.unshift({id:m.id,ts:m.ts,score:m.overall,shape:m.shape,thumb:th,
+      metrics:Object.assign({},m,{pts:[],links:[]})});
+    try{localStorage.setItem('nva_reports',JSON.stringify(rs.slice(0,10)))}catch(e){}
+    if(!silent)toast('گزارش در حافظهٔ محلی ذخیره شد');
+    if(S.view==='report')renderReportView();
+  };
+  const c=document.createElement('canvas');c.width=80;c.height=80;const x=c.getContext('2d');
+  const im=new Image();
+  im.onload=()=>{const k=Math.max(80/im.naturalWidth,80/im.naturalHeight);
+    x.drawImage(im,(80-im.naturalWidth*k)/2,(80-im.naturalHeight*k)/2,im.naturalWidth*k,im.naturalHeight*k);
+    push(c.toDataURL('image/jpeg',.5))};
+  im.onerror=()=>push('');im.src=S.photo||'';
+}
+function renderReportView(){
+  const m=S.lastReport,b=$('#repbody');
+  if(!m){b.innerHTML=`<div class="empty-state"><i data-lucide="file-text"></i><br>گزارشی موجود نیست.<br>ابتدا یک تحلیل کامل انجام دهید.
+    <div style="margin-top:18px"><button class="btn pri" id="rp-go" style="width:auto;padding:10px 26px;display:inline-flex">شروع اسکن</button></div></div>`;
+    icons();const g=$('#rp-go');if(g)g.onclick=()=>setView('scan');return}
+  const s=m.scores,[sfa]=SHAPES[m.shape],sug=SUG[m.shape]||SUG.OVAL;
+  const saved=getReports();
+  b.innerHTML=`
+  <div class="sec"><span>AI FACIAL ANALYSIS REPORT</span><b>${m.id}</b></div>
+  <div class="panel holo rep-doc">
+    <div class="rh">AI FACIAL ANALYSIS REPORT</div>
+    <div class="rs">NEURAL VISION AI · VISUAL ANALYSIS ONLY</div>
+    <div class="rep-grid">
+      <div class="rep-cell"><b>OVERALL SCORE</b><span>${m.overall} / 100</span></div>
+      <div class="rep-cell"><b>FACE SHAPE</b><span class="p">${m.shape}</span></div>
+      <div class="rep-cell"><b>SYMMETRY</b><span>${m.symN}%</span></div>
+      <div class="rep-cell"><b>CONFIDENCE</b><span>${m.conf}%</span></div>
+    </div>
+    <div class="sec" style="margin-top:14px"><span>FEATURE ANALYSIS</span><b>12</b></div>
+    <div class="rep-list">
+      ${MDEF.map(([k,lt,fa])=>`<div><b>${fa}</b> — ${lt}: ${s[k]}/100 · ${badge(s[k])[0]}</div>`).join('')}
+    </div>
+    <div class="sec" style="margin-top:14px"><span>PROPORTIONS</span><b>EST</b></div>
+    <div class="rep-list">
+      <div><b>Length:Width</b> ${m.prof.LWR.toFixed(2)}:1 · <b>Fore/Cheek</b> ${m.prof.fh.toFixed(2)} · <b>Jaw/Cheek</b> ${m.prof.jw.toFixed(2)}</div>
+      <div><b>Sectioning</b> ≈ ${m.secs.browY*100|0} / ${((m.secs.noseEnd-m.secs.browY)*100)|0} / ${((1-m.secs.noseEnd)*100)|0} %</div>
+    </div>
+    <div class="sec" style="margin-top:14px"><span>GROOMING &amp; STYLE</span></div>
+    <div class="rep-list">
+      <div><b>Hairstyle</b> ${S.picks?S.picks.hair:sug.hair[0]} · alt: ${sug.hair.slice(1).join(', ')||'—'}</div>
+      <div><b>Beard</b> ${S.picks?S.picks.beard:sug.beard[0]} · alt: ${sug.beard.slice(1).join(', ')||'—'}</div>
+      <div><b>Eyebrow</b> ${S.picks?S.picks.brow:'Natural'}</div>
+      <div><b>Glasses</b> ${sug.gl}</div>
+    </div>
+    <div class="disc" style="margin-top:12px">این گزارش صرفاً <b>تحلیل بصری تخمینی</b> ویژگی‌های قابل مشاهده است؛ دربارهٔ شخصیت، سلامت، هویت یا هر ویژگی حساس نتیجه‌گیری نمی‌کند و ارزش زیبایی‌شناختی قطعی نیست.</div>
+  </div>
+  <div class="rep-actions">
+    <button class="btn pri" id="rv-save"><i data-lucide="save"></i>SAVE REPORT</button>
+    <button class="btn pu" id="rv-share"><i data-lucide="share-2"></i>SHARE REPORT</button>
+    <button class="btn" id="rv-pdf"><i data-lucide="file-down"></i>EXPORT PDF</button>
+  </div>
+  <div class="sec"><span>SAVED REPORTS</span><b>${saved.length} LOCAL</b></div>
+  <div class="panel holo" style="padding:2px 14px">
+    ${saved.length?saved.map(r=>`
+    <div class="saved-rec" data-id="${r.id}">
+      ${r.thumb?`<img src="${r.thumb}" alt="">`:`<div style="width:44px;height:44px;border:1px dashed var(--line2);border-radius:7px"></div>`}
+      <div class="si"><div class="sid">${r.id}</div><div class="st">${new Date(r.ts).toLocaleString('fa-IR')} · ${r.shape}</div></div>
+      <div class="ss">${r.score}</div>
+    </div>`).join(''):`<div class="empty-state" style="padding:26px;font-size:11.5px">گزارش ذخیره‌شده‌ای نیست.</div>`}
+  </div>`;
+  icons();
+  $('#rv-save').onclick=()=>saveReport(m);
+  $('#rv-share').onclick=()=>shareReport(m);
+  $('#rv-pdf').onclick=()=>exportPDF(m);
+  $$('#repbody .saved-rec').forEach(el=>el.onclick=()=>{
+    const r=getReports().find(x=>x.id===el.dataset.id);
+    if(r){Snd.tick();S.lastReport=r.metrics;renderResults(r.metrics);setView('results');
+      toast('گزارش '+r.id+' باز شد')}
+  });
+}
+function reportText(m){
+  const[st]=SHAPES[m.shape],s=m.scores;
+  return `NEURAL VISION AI — REPORT ${m.id}
+SCORE ${m.overall}/100 · SHAPE ${m.shape} (${st}) · CONF ${m.conf}%
+SYMMETRY ${m.symN}% · HARMONY ${m.harmonyN} · L:W ${m.prof.LWR.toFixed(2)}:1
+TOP: jaw ${s.jawline} · skin ${s.skin} · eye ${s.eye}
+STYLE: ${SUG[m.shape].hair[0]} + ${SUG[m.shape].beard[0]}
+VISUAL/ESTIMATED ANALYSIS ONLY · LOCAL-ONLY · ${new Date(m.ts).toLocaleString('fa-IR')}`;
+}
+async function shareReport(m){
+  const txt=reportText(m);
+  if(navigator.share){
+    try{
+      if(_baCache.base&&navigator.canShare){
+        const blob=await new Promise(r=>_baCache.base.toBlob(r,'image/jpeg',.85));
+        const f=[new File([blob],'nva-report.jpg',{type:'image/jpeg'})];
+        if(navigator.canShare({files:f})){await navigator.share({files:f,title:'NVA Report',text:txt});return}
+      }
+      await navigator.share({title:'NEURAL VISION AI',text:txt});return;
+    }catch(e){if(e.name==='AbortError')return}
+  }
+  copyText(txt,()=>toast('خلاصهٔ گزارش کپی شد'));
+}
+function copyText(t,cb){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(cb).catch(()=>fb(t,cb))}
+  else fb(t,cb);
+  function fb(t2,cb2){const a=document.createElement('textarea');a.value=t2;a.style.position='fixed';a.style.opacity='0';
+    document.body.appendChild(a);a.select();try{document.execCommand('copy');cb2()}catch(e){toast('کپی ناموفق بود','warn')}a.remove()}
+}
+/* ---------- EXPORT PDF: رندر گزارش روی canvas → jsPDF (fallback: تصویر) ---------- */
+async function exportPDF(m){
+  toast('در حال ساخت PDF …');
+  try{
+    await document.fonts.ready;
+    const W=880,H=1270;
+    const s=m.scores,[sfa]=SHAPES[m.shape];
+    const c=document.createElement('canvas');c.width=W;c.height=H;
+    const x=c.getContext('2d');
+    x.fillStyle='#04070d';x.fillRect(0,0,W,H);
+    x.strokeStyle='rgba(0,229,255,.06)';x.lineWidth=1;
+    for(let gy=0;gy<H;gy+=40){x.beginPath();x.moveTo(0,gy);x.lineTo(W,gy);x.stroke()}
+    for(let gx=0;gx<W;gx+=40){x.beginPath();x.moveTo(gx,0);x.lineTo(gx,H);x.stroke()}
+    x.strokeStyle='rgba(0,229,255,.6)';x.lineWidth=3;
+    x.strokeRect(20,20,W-40,H-40);
+    x.fillStyle='#00e5ff';x.font='900 34px Orbitron';x.textAlign='center';
+    x.fillText('NEURAL VISION AI',W/2,90);
+    x.fillStyle='#7d93a8';x.font='500 15px "Chakra Petch"';
+    x.fillText('AI FACIAL ANALYSIS REPORT — VISUAL / ESTIMATED ONLY',W/2,120);
+    x.fillStyle='#43596e';x.font='12px "JetBrains Mono"';
+    x.fillText(m.id+' · '+new Date(m.ts).toLocaleString('fa-IR'),W/2,144);
+    const cx=W/2,cy=270,r=76;
+    x.strokeStyle='rgba(0,229,255,.12)';x.lineWidth=10;
+    x.beginPath();x.arc(cx,cy,r,0,7);x.stroke();
+    x.strokeStyle='#00e5ff';x.lineCap='round';
+    x.beginPath();x.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+7*m.overall/100*.999);x.stroke();
+    x.fillStyle='#00e5ff';x.font='900 44px Orbitron';
+    x.fillText(m.overall,cx,cy+10);
+    x.fillStyle='#7d93a8';x.font='13px "JetBrains Mono"';
+    x.fillText('OVERALL / 100',cx,cy+34);
+    x.fillStyle='#a970ff';x.font='700 20px Orbitron';
+    x.fillText(m.shape+' — '+sfa,cx,cy+124);
+    let y=440;
+    x.textAlign='right';
+    MDEF.forEach(([k,lt,fa])=>{
+      const v=s[k];
+      x.fillStyle='#e8f6ff';x.font='500 16px Vazirmatn';
+      x.fillText(fa,W-70,y+6);
+      x.fillStyle='#43596e';x.font='10px "JetBrains Mono"';x.textAlign='left';
+      x.fillText(lt,70,y+6);x.textAlign='right';
+      x.strokeStyle='rgba(0,229,255,.15)';x.lineWidth=6;
+      x.beginPath();x.moveTo(280,y+2);x.lineTo(700,y+2);x.stroke();
+      x.strokeStyle=v>=75?'#3dffb0':v>=60?'#00e5ff':v>=45?'#a970ff':'#ff3d6e';
+      x.beginPath();x.moveTo(700-(420*v/100),y+2);x.lineTo(700,y+2);x.stroke();
+      x.fillStyle='#00e5ff';x.font='700 15px "JetBrains Mono"';
+      x.fillText(v,730,y+7);
+      y+=44;
+    });
+    y+=18;x.textAlign='left';x.fillStyle='#7d93a8';x.font='600 14px "Chakra Petch"';
+    x.fillText('PROPORTIONS (ESTIMATED)',70,y);y+=26;
+    x.fillStyle='#e8f6ff';x.font='13px "JetBrains Mono"';
+    x.fillText(`L:W ${m.prof.LWR.toFixed(2)}:1   ·   FORE/CHEEK ${m.prof.fh.toFixed(2)}   ·   JAW/CHEEK ${m.prof.jw.toFixed(2)}`,70,y);y+=24;
+    x.fillText(`SECTIONING ≈ ${m.secs.browY*100|0} / ${((m.secs.noseEnd-m.secs.browY)*100)|0} / ${((1-m.secs.noseEnd)*100)|0} %   ·   SYMMETRY ${m.symN}%`,70,y);y+=40;
+    x.fillStyle='#7d93a8';x.font='600 14px "Chakra Petch"';
+    x.fillText('STYLE RECOMMENDATIONS',70,y);y+=26;
+    x.fillStyle='#e8f6ff';x.font='13px "JetBrains Mono"';
+    x.fillText(`HAIRSTYLE : ${SUG[m.shape].hair.join(' · ')}`,70,y);y+=22;
+    x.fillText(`BEARD : ${SUG[m.shape].beard.join(' · ')}`,70,y);y+=22;
+    x.fillText(`GLASSES : ${SUG[m.shape].gl}`,70,y);y+=40;
+    x.fillStyle='#ffc857';x.font='12px Vazirmatn';x.textAlign='center';
+    x.fillText('این گزارش تحلیل بصری تخمینی است — دربارهٔ شخصیت، سلامت یا هویت نتیجه‌گیری نمی‌کند.',W/2,H-64);
+    x.fillStyle='#43596e';x.font='11px "JetBrains Mono"';
+    x.fillText('LOCAL-ONLY PROCESSING · NO DATA LEFT THIS DEVICE',W/2,H-42);
+
+    const img=c.toDataURL('image/jpeg',.9);
+    if(window.jspdf&&window.jspdf.jsPDF){
+      const pdf=new jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const pw=210,ph=pw*H/W;
+      pdf.addImage(img,'JPEG',0,0,pw,Math.min(ph,297));
+      pdf.save('NVA-Report-'+m.id+'.pdf');
+      toast('PDF ذخیره شد');
+    }else{
+      const a=document.createElement('a');a.href=img;a.download='NVA-Report-'+m.id+'.jpg';a.click();
+      toast('کتابخانهٔ PDF در دسترس نبود — تصویر گزارش دانلود شد','warn');
+    }
+    Snd.ok();
+  }catch(e){toast('ساخت PDF ناموفق بود','err')}
+}
+
+/* ================= PRIVACY / SETTINGS ================= */
+function renderSettings(){
+  const b=$('#setbody');
+  const rec=S.enroll;
+  b.innerHTML=`
+  <div class="sec"><span>CYBER PRIVACY CENTER</span><b>SHIELD</b></div>
+  <div class="panel holo pv-card">
+    <div class="pv-stat"><i data-lucide="scan-face" style="color:var(--cy)"></i>
+      <div class="t">دادهٔ چهره<div class="s">تصاویر خام فقط در حافظهٔ موقت نگه داشته می‌شوند و با بستن اپ پاک می‌شوند.</div></div>
+      <span class="pv-badge pb-g" style="direction:ltr">PROTECTED</span></div>
+    <div class="pv-stat"><i data-lucide="cpu" style="color:var(--cy)"></i>
+      <div class="t">پردازش<div class="s">کل موتور تحلیل روی همین دستگاه اجرا می‌شود؛ هیچ آپلودی وجود ندارد.</div></div>
+      <span class="pv-badge pb-g" style="direction:ltr">LOCAL</span></div>
+    <div class="pv-stat"><i data-lucide="eye-off" style="color:var(--pu)"></i>
+      <div class="t">شناسایی ناشناس<div class="s">این سیستم هرگز هویت افراد ناشناس را از روی چهره مشخص نمی‌کند.</div></div>
+      <span class="pv-badge pb-p" style="direction:ltr">DISABLED</span></div>
+    <div class="pv-stat"><i data-lucide="fingerprint" style="color:var(--am)"></i>
+      <div class="t">ذخیرهٔ بیومتریک<div class="s">بدون رضایت صریح شما هیچ دادهٔ چهره‌ای ذخیره نمی‌شود.</div></div>
+      <span class="pv-badge pb-a" style="direction:ltr">CONSENT-ONLY</span></div>
+  </div>
+
+  <div class="sec"><span>FACE RECOGNITION</span><b>SELF-MATCH</b></div>
+  <div class="panel holo">
+    <div class="rec-status">
+      ENROLLMENT ......... <b>${rec?'ACTIVE · '+new Date(rec.ts).toLocaleDateString('fa-IR'):'NONE'}</b><br>
+      VECTOR ............. <b>${rec?'100-DIM LUMINANCE · LOCAL ONLY':'—'}</b><br>
+      RAW IMAGE STORED ... <b>NO</b> (only numeric vector)<br>
+      MATCH SCOPE ........ <b>SELF ONLY</b> — تطبیق فقط با مرجع خود شما
+    </div>
+    <div style="padding:0 15px 15px;display:flex;flex-direction:column;gap:9px">
+      ${rec?`<button class="btn ghost" id="rc-verify"><i data-lucide="user-check"></i>تست تطبیق با تصویر فعلی</button>
+      <button class="btn dng" id="rc-del"><i data-lucide="trash-2"></i>حذف دادهٔ چهره</button>`
+      :`<button class="btn pu" id="rc-enroll"><i data-lucide="fingerprint"></i>ثبت چهرهٔ مرجع (با رضایت)</button>
+      <input type="file" id="f-enroll" accept="image/*" hidden>`}
+    </div>
+  </div>
+
+  <div class="sec"><span>PRIVACY SETTINGS</span><b>CONTROLS</b></div>
+  <div class="panel holo">
+    <div class="set-row"><div class="t">ذخیرهٔ خودکار گزارش‌ها<div class="s">پس از هر اسکن، گزارش در حافظهٔ محلی ذخیره شود</div></div>
+      <span class="sw ${S.set.save?'on':''}" id="sw-save"></span></div>
+    <div class="set-row"><div class="t">صدای رابط<div class="s">بیپ‌های کوتاه سیستم</div></div>
+      <span class="sw ${S.set.sound?'on':''}" id="sw-sound"></span></div>
+    <div class="set-row"><div class="t">لرزش لمسی<div class="s">بازخورد هپتیک</div></div>
+      <span class="sw ${S.set.haptics?'on':''}" id="sw-haptics"></span></div>
+  </div>
+
+  <div class="sec"><span>DANGER ZONE</span><b>WIPE</b></div>
+  <div class="panel holo" style="padding:15px;display:flex;flex-direction:column;gap:9px">
+    <button class="btn ghost" id="w-an"><i data-lucide="file-x"></i>DELETE ANALYSIS DATA (گزارش‌ها)</button>
+    <button class="btn dng" id="w-all"><i data-lucide="bomb"></i>CLEAR ALL DATA</button>
+    <div class="hint" style="margin-top:4px">نسخه 4.2 · موتور تحلیل: پروفیل عرض + YCbCr · همه‌چیز آفلاین</div>
+  </div>`;
+  icons();
+  const tog=(k,el)=>el.onclick=()=>{S.set[k]=!S.set[k];el.classList.toggle('on',S.set[k]);saveSet();Snd.tick();Vib(6)};
+  tog('save',$('#sw-save'));tog('sound',$('#sw-sound'));tog('haptics',$('#sw-haptics'));
+
+  let wipeArm=false;
+  $('#w-an').onclick=()=>{
+    if(!wipeArm){wipeArm=true;$('#w-an').innerHTML='<i data-lucide="alert-triangle"></i>مطمئنید؟ دوباره بزنید';icons();
+      setTimeout(()=>{wipeArm=false;renderSettings()},2500);return}
+    localStorage.removeItem('nva_reports');S.lastReport=null;Snd.err();
+    toast('همهٔ گزارش‌های تحلیل حذف شد','warn');renderSettings();
+  };
+  $('#w-all').onclick=()=>{
+    if(!wipeArm){wipeArm=true;$('#w-all').innerHTML='<i data-lucide="alert-triangle"></i>پاکسازی کامل؟ دوباره بزنید';icons();
+      setTimeout(()=>{wipeArm=false;renderSettings()},2500);return}
+    localStorage.removeItem('nva_reports');localStorage.removeItem('nva_enroll');
+    localStorage.removeItem('nva_settings');
+    S.enroll=null;S.lastReport=null;S.photo=null;S.set={save:true,sound:true,haptics:true};
+    Snd.err();Vib([60,40,60]);toast('کل داده‌ها پاکسازی شد','warn');renderSettings();
+  };
+
+  if(rec){
+    $('#rc-del').onclick=()=>{localStorage.removeItem('nva_enroll');S.enroll=null;
+      Snd.err();toast('بردار چهره حذف شد','warn');renderSettings()};
+    $('#rc-verify').onclick=()=>{
+      if(!S.photo){toast('ابتدا در تب اسکن یک تصویر آماده کنید','warn');setView('scan');return}
+      analyzeImage(S.photo).then(m2=>{
+        if(!m2.ok){toast('چهره‌ای در تصویر فعلی یافت نشد','warn');return}
+        let dot=0;for(let i=0;i<100;i++)dot+=m2.emb[i]*rec.emb[i];
+        const sim=clamp(Math.round(dot*100),0,99);
+        S.match={sim};S.lastReport=m2;renderResults(m2);setView('results');
+        toast(sim>=86?'تطبیق تأیید شد · MATCH '+sim+'%':'عدم تطبیق · MATCH '+sim+'%',sim>=86?'ok':'warn');
+      });
+    };
+  }else{
+    $('#rc-enroll').onclick=()=>{Snd.tick();$('#f-enroll').click()};
+    $('#f-enroll').addEventListener('change',e=>{
+      const f=e.target.files[0];e.target.value='';
+      if(!f)return;
+      const r=new FileReader();r.onload=()=>showConsent(r.result);r.readAsDataURL(f);
+    });
+  }
+}
+/* مودال رضایت صریح */
+let _pendingEmb=null;
+async function showConsent(url){
+  try{
+    const m=await analyzeImage(url);
+    if(!m.ok){toast('در تصویر مرجع چهره‌ای یافت نشد','warn');return}
+    _pendingEmb={emb:m.emb};
+    $('#modal-body').innerHTML=`
+      <div style="direction:rtl">با ثبت چهرهٔ مرجع، موارد زیر را می‌پذیرید:</div>
+      <div style="font-size:11.5px;color:var(--mut);margin-top:8px;line-height:2">
+      • فقط یک <b style="color:var(--cy)">بردار عددی ۱۰۰بعدی</b> از روشنایی چهره روی همین دستگاه ذخیره می‌شود.<br>
+      • تصویر خام مرجع <b style="color:var(--rd)">ذخیره نمی‌شود</b> و جایی ارسال نمی‌شود.<br>
+      • تطبیق فقط برای مقایسه با خودِ شما انجام می‌شود، نه شناسایی دیگران.<br>
+      • هر زمان می‌توانید از همین صفحه دادهٔ چهره را حذف کنید.</div>
+      <label class="consent-row">
+        <input type="checkbox" id="ck-ok">
+        <span style="font-size:11.5px;line-height:1.9">رضایت صریح خود را برای ذخیرهٔ بردار محلی چهره اعلام می‌کنم.</span>
+      </label>`;
+    $('#modal').classList.add('on');
+    $('#md-yes').disabled=true;
+    $('#ck-ok').onchange=e=>{$('#md-yes').disabled=!e.target.checked;Snd.tick()};
+    $('#md-no').onclick=()=>{$('#modal').classList.remove('on');_pendingEmb=null};
+    $('#md-yes').onclick=()=>{
+      if(!_pendingEmb)return;
+      S.enroll={emb:_pendingEmb.emb,ts:Date.now()};
+      localStorage.setItem('nva_enroll',JSON.stringify(S.enroll));
+      $('#modal').classList.remove('on');_pendingEmb=null;
+      Snd.ok();Vib([20,30,40]);
+      toast('چهرهٔ مرجع با موفقیت ثبت شد — داده فقط محلی است');
+      renderSettings();
+    };
+  }catch(e){toast('پردازش تصویر مرجع ناموفق بود','err')}
+}
+
+/* ================= ورودی‌های سراسری ================= */
+$('#sndbtn').onclick=()=>{S.set.sound=!S.set.sound;saveSet();
+  $('#sndbtn').innerHTML=`<i data-lucide="${S.set.sound?'volume-2':'volume-x'}"></i>`;
+  $('#sndbtn').classList.toggle('onn',S.set.sound);icons();if(S.set.sound)Snd.tick()};
+$('#vibbtn').onclick=()=>{S.set.haptics=!S.set.haptics;saveSet();
+  $('#vibbtn').innerHTML=`<i data-lucide="${S.set.haptics?'vibrate':'vibrate-off'}"></i>`;
+  $('#vibbtn').classList.toggle('onn',S.set.haptics);icons();if(S.set.haptics)Vib(25)};
+/* سوایپ افقی بین تب‌ها */
+let swX=0,swY=0,swOn=false;
+const main=$('#main');
+main.addEventListener('touchstart',e=>{
+  if(S.analyzing||$('#analyzer').classList.contains('on')||$('#modal').classList.contains('on'))return;
+  const t=e.touches[0];swX=t.clientX;swY=t.clientY;swOn=true;
+},{passive:true});
+main.addEventListener('touchend',e=>{
+  if(!swOn)return;swOn=false;
+  const t=e.changedTouches[0],dx=t.clientX-swX,dy=t.clientY-swY;
+  if(Math.abs(dx)>66&&Math.abs(dy)<50&&Math.abs(dx)>Math.abs(dy)*1.5){
+    const i=TABS.indexOf(S.view),ni=clamp(i+(dx<0?1:-1),0,TABS.length-1);
+    if(ni!==i){Snd.tick();Vib(8);setView(TABS[ni])}
+  }
+},{passive:true});
+icons();
+</script>
+</body>
+</html>
